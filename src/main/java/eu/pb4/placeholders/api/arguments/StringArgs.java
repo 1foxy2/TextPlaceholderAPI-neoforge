@@ -12,7 +12,7 @@ public final class StringArgs {
     private static final StringArgs EMPTY = new StringArgs("");
     private final List<String> ordered = new ArrayList<>();
     private final Map<String, String> keyed = new HashMap<>();
-    private final Map<String, StringArgs> keyedMaps = new HashMap<>();
+    private Map<String, StringArgs> keyedMaps = new HashMap<>();
     private final String input;
     private int currentOrdered = 0;
 
@@ -69,27 +69,20 @@ public final class StringArgs {
             if (chr == stopAt && wrap == 0) {
                 break;
             } else if (key != null && b.isEmpty() && hasMaps && (chr == '{' || chr == '[') && wrap == 0) {
-                var ordered = new ArrayList<String>();
-                var keyed = new HashMap<String, String>();
-                var keyedMaps = new HashMap<String, StringArgs>();
+                var arg = new StringArgs("");
                 var ti = keyDecomposition(input, i + 1, separator, map, isWrap, true,
                         chr == '{' ? '}' : ']', (keyx, valuex) -> {
                             if (keyx != null) {
-                                keyed.put(keyx, valuex != null ? SimpleArguments.unwrap(valuex, isWrap) : "");
+                                arg.keyed.put(keyx, valuex != null ? SimpleArguments.unwrap(valuex, isWrap) : "");
 
                                 if (valuex == null) {
-                                    ordered.add(SimpleArguments.unwrap(keyx, isWrap));
+                                    arg.ordered.add(SimpleArguments.unwrap(keyx, isWrap));
                                 }
                             }
-                        }, keyedMaps::put);
+                        }, arg.keyedMaps::put);
                 if (ti == input.length()) {
                     b.append(chr);
                 } else {
-                    var arg = new StringArgs(input.substring(i, ti));
-                    arg.ordered.addAll(ordered);
-                    arg.keyed.putAll(keyed);
-                    arg.keyedMaps.putAll(keyedMaps);
-
                     mapConsumer.accept(key, arg);
                     key = null;
                     i = ti;
@@ -147,15 +140,6 @@ public final class StringArgs {
     @Nullable
     public String get(String name) {
         return this.keyed.get(name);
-    }
-
-    @Nullable
-    public StringArgs getNested(String name) {
-        return this.keyedMaps.get(name);
-    }
-
-    public StringArgs getNestedOrEmpty(String name) {
-        return this.keyedMaps.getOrDefault(name, EMPTY);
     }
 
     public String get(String name, String defaultValue) {

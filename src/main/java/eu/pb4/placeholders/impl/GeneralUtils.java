@@ -54,9 +54,7 @@ public class GeneralUtils {
     }
 
     private static int getGradientLength(Component base) {
-        int length = base.getContents() instanceof PlainTextContents.LiteralContents l
-                ? l.text().codePointCount(0, l.text().length())
-                : base.getContents() == PlainTextContents.EMPTY ? 0 : 1;
+        int length = base.getContents() instanceof PlainTextContents.LiteralContents l ? l.text().length() : base.getContents() == PlainTextContents.EMPTY ? 0 : 1;
 
         for (var text : base.getSiblings()) {
             length += getGradientLength(text);
@@ -164,13 +162,6 @@ public class GeneralUtils {
     }
 
     public static MutableComponent cloneTransformText(Component input, Function<MutableComponent, MutableComponent> transform) {
-        return cloneTransformText(input, transform, text -> true);
-    }
-    public static MutableComponent cloneTransformText(Component input, Function<MutableComponent, MutableComponent> transform, Predicate<Component> canContinue) {
-        if (!canContinue.test(input)) {
-            return input.copy();
-        }
-
         MutableComponent baseText;
         if (input.getContents() instanceof TranslatableContents translatable) {
             var obj = new ArrayList<>();
@@ -189,7 +180,7 @@ public class GeneralUtils {
         }
 
         for (var sibling : input.getSiblings()) {
-            baseText.append(cloneTransformText(sibling, transform, canContinue));
+            baseText.append(cloneTransformText(sibling, transform));
         }
 
         baseText.setStyle(input.getStyle());
@@ -236,11 +227,11 @@ public class GeneralUtils {
 
             list.add(TranslatedNode.ofFallback(content.getKey(), content.getFallback(), args.toArray()));
         } else if (input.getContents() instanceof ScoreContents content) {
-            list.add(new ScoreNode(content.name(), content.objective()));
+            list.add(new ScoreNode(content.getName(), content.getObjective()));
         } else if (input.getContents() instanceof KeybindContents content) {
             list.add(new KeybindNode(content.getName()));
         } else if (input.getContents() instanceof SelectorContents content) {
-            list.add(new SelectorNode(content.selector(), content.separator().map(GeneralUtils::convertToNodes)));
+            list.add(new SelectorNode(content.getPattern(), content.getSeparator().map(GeneralUtils::convertToNodes)));
         } else if (input.getContents() instanceof NbtContents content) {
             list.add(new NbtNode(content.getNbtPath(), content.isInterpreting(), content.getSeparator().map(GeneralUtils::convertToNodes), content.getDataSource()));
         }

@@ -3,7 +3,6 @@ package eu.pb4.placeholders.impl.placeholder.builtin;
 import eu.pb4.placeholders.api.PlaceholderResult;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.impl.GeneralUtils;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.network.chat.Component;
@@ -16,8 +15,6 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.ReadOnlyScoreInfo;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-
-import java.util.Locale;
 
 
 public class PlayerPlaceholders {
@@ -200,7 +197,7 @@ public class PlayerPlaceholders {
                     if (args.length == 1) {
                         var identifier = ResourceLocation.tryParse(args[0]);
                         if (identifier != null) {
-                            var stat = Stats.CUSTOM.get(BuiltInRegistries.CUSTOM_STAT.getValue(identifier));
+                            var stat = Stats.CUSTOM.get(BuiltInRegistries.CUSTOM_STAT.get(identifier));
                             int x = ctx.player().getStats().getValue(stat);
                             return PlaceholderResult.value(stat.format(x));
                         }
@@ -208,7 +205,7 @@ public class PlayerPlaceholders {
                         var type = ResourceLocation.tryParse(args[0]);
                         var id = ResourceLocation.tryParse(args[1]);
                         if (type != null) {
-                            var statType = (StatType<Object>) BuiltInRegistries.STAT_TYPE.getValue(type);
+                            var statType = (StatType<Object>) BuiltInRegistries.STAT_TYPE.get(type);
 
                             if (statType != null) {
                                 var key = statType.getRegistry().get(id);
@@ -237,7 +234,7 @@ public class PlayerPlaceholders {
                     if (args.length == 1) {
                         var identifier = ResourceLocation.tryParse(args[0]);
                         if (identifier != null) {
-                            var stat = Stats.CUSTOM.get(BuiltInRegistries.CUSTOM_STAT.getValue(identifier));
+                            var stat = Stats.CUSTOM.get(BuiltInRegistries.CUSTOM_STAT.get(identifier));
                             int x = ctx.player().getStats().getValue(stat);
                             return PlaceholderResult.value(String.valueOf(x));
                         }
@@ -245,7 +242,7 @@ public class PlayerPlaceholders {
                         var type = ResourceLocation.tryParse(args[0]);
                         var id = ResourceLocation.tryParse(args[1]);
                         if (type != null) {
-                            var statType = (StatType<Object>) BuiltInRegistries.STAT_TYPE.getValue(type);
+                            var statType = (StatType<Object>) BuiltInRegistries.STAT_TYPE.get(type);
 
                             if (statType != null) {
                                 var key = statType.getRegistry().get(id);
@@ -280,42 +277,6 @@ public class PlayerPlaceholders {
                     /* Into the void you go! */
                 }
                 return PlaceholderResult.invalid("Invalid objective!");
-            } else {
-                return PlaceholderResult.invalid("No player!");
-            }
-        });
-
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("player", "facing"), (ctx, arg) -> {
-            if (ctx.hasPlayer()) {
-                return PlaceholderResult.value(ctx.player().getNearestViewDirection().toString());
-            } else {
-                return PlaceholderResult.invalid("No player!");
-            }
-        });
-
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("player", "facing_axis"), (ctx, arg) -> {
-            if (ctx.hasPlayer()) {
-                var facing = ctx.player().getNearestViewDirection();
-                return PlaceholderResult.value(
-                        (facing.getAxisDirection() == Direction.AxisDirection.NEGATIVE ? "-" : "+") + facing.getAxis().toString().toUpperCase(Locale.ROOT));
-            } else {
-                return PlaceholderResult.invalid("No player!");
-            }
-        });
-
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("player", "horizontal_facing"), (ctx, arg) -> {
-            if (ctx.hasPlayer()) {
-                return PlaceholderResult.value(ctx.player().getDirection().toString());
-            } else {
-                return PlaceholderResult.invalid("No player!");
-            }
-        });
-
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("player", "horizontal_facing_axis"), (ctx, arg) -> {
-            if (ctx.hasPlayer()) {
-                var facing = ctx.player().getDirection();
-                return PlaceholderResult.value(
-                        (facing.getAxisDirection() == Direction.AxisDirection.NEGATIVE ? "-" : "+") + facing.getAxis().toString().toUpperCase(Locale.ROOT));
             } else {
                 return PlaceholderResult.invalid("No player!");
             }

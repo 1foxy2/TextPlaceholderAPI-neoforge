@@ -14,8 +14,8 @@ import eu.pb4.placeholders.impl.GeneralUtils;
 import eu.pb4.placeholders.impl.StringArgOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
-import net.minecraft.commands.arguments.selector.SelectorPattern;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.contents.BlockDataSource;
@@ -23,6 +23,7 @@ import net.minecraft.network.chat.contents.EntityDataSource;
 import net.minecraft.network.chat.contents.StorageDataSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
@@ -116,43 +117,6 @@ public final class BuiltinTags {
                             true,
                             (nodes, data, parser) -> {
                                 return new DynamicColorNode(nodes, parser.parseNode(data.get("value", 0, "white")));
-                            })
-            );
-        }
-
-        {
-            TagRegistry.registerDefault(
-                    TextTag.enclosing(
-                            "shadow",
-                            List.of("shadow_color"),
-                            "color",
-                            false,
-                            (nodes, data, parser) -> {
-                                try {
-                                    if (data.contains("scale") && data.size() == 1) {
-                                        return new ColorBasedShadowNode(nodes, Float.parseFloat(data.get("scale", "0")));
-                                    }
-
-                                    var color = data.get("value", 0);
-                                    if (color == null) {
-                                        return new ColorBasedShadowNode(nodes);
-                                    }
-
-                                    int value;
-                                    if (color.startsWith("#")) {
-                                        value = Integer.parseUnsignedInt(color.substring(1), 16);
-                                        if (color.length() == 7) {
-                                            value = (value & 0xFFFFFF) | 0xFF000000;
-                                        }
-                                    } else {
-                                        value = TextColor.parseColor(color).getOrThrow().getValue() | 0xFF000000;
-                                    }
-
-
-                                    return new ShadowNode(nodes, value);
-                                } catch (Throwable e) {
-                                    return new ParentNode(nodes);
-                                }
                             })
             );
         }
@@ -360,29 +324,23 @@ public final class BuiltinTags {
                                         } else if (type.equals("show_item") || type.equals("item")) {
                                             var value = data.getNext("value", "");
                                             try {
-                                                var nbt = TagParser.parseTag(value);
-                                                var id = ResourceLocation.parse(nbt.getString("id"));
-                                                var count = nbt.contains("count") ? nbt.getInt("count") : 1;
-
-                                                var comps = nbt.getCompound("components");
                                                 return new HoverNode<>(nodes,
-                                                        HoverNode.Action.LAZY_ITEM_STACK,
-                                                        new HoverNode.LazyItemStackNodeContent<>(id, count, NbtOps.INSTANCE, comps));
-                                            } catch (Throwable ignored) {}
-                                            try {
-                                                var item = ResourceLocation.parse(data.get("item", value));
-                                                var count = 1;
-                                                var countTxt = data.getNext("count");
-                                                if (countTxt != null) {
-                                                    count = Integer.parseInt(countTxt);
+                                                        HoverNode.Action.ITEM_STACK,
+                                                        new HoverEvent.ItemStackInfo(ItemStack.parseOptional(RegistryAccess.EMPTY, TagParser.parseTag(value)))
+                                                );
+                                            } catch (Throwable e) {
+                                                var stack = BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(data.get("item", value))).getDefaultInstance();
+
+                                                var count = data.getNext("count");
+                                                if (count != null) {
+                                                    stack.setCount(Integer.parseInt(count));
                                                 }
 
                                                 return new HoverNode<>(nodes,
-                                                        HoverNode.Action.LAZY_ITEM_STACK,
-                                                        new HoverNode.LazyItemStackNodeContent<>(item, count,
-                                                                StringArgOps.INSTANCE, Either.right(data.getNestedOrEmpty("components")))
+                                                        HoverNode.Action.ITEM_STACK,
+                                                        new HoverEvent.ItemStackInfo(stack)
                                                 );
-                                            } catch (Throwable ignored) {}
+                                            }
                                         } else {
                                             return new HoverNode<>(nodes, HoverNode.Action.TEXT, parser.parseNode(data.get("value", type)));
                                         }
@@ -567,11 +525,7 @@ public final class BuiltinTags {
                                 var sel = data.getNext("pattern", "@p");
                                 var arg = data.getNext("separator");
 
-                                Optional<SelectorPattern> selector = SelectorPattern.parse(sel).result();
-                                if (selector.isEmpty()) {
-                                    return TextNode.empty();
-                                }
-                                return new SelectorNode(selector.get(), arg != null ? Optional.of(TextNode.of(arg)) : Optional.empty());
+                                return new SelectorNode(sel, arg != null ? Optional.of(TextNode.of(arg)) : Optional.empty());
                             }
                     )
             );

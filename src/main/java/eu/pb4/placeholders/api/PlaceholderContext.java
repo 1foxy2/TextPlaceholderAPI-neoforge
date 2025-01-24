@@ -70,7 +70,7 @@ public record PlaceholderContext(MinecraftServer server,
     }
 
     public ParserContext asParserContext() {
-        return ParserContext.of(KEY, this).with(ParserContext.Key.WRAPPER_LOOKUP, this.server.registryAccess());
+        return ParserContext.of(KEY, this);
     }
 
     public PlaceholderContext withView(ViewObject view) {
@@ -79,7 +79,6 @@ public record PlaceholderContext(MinecraftServer server,
 
     public void addToContext(ParserContext context) {
         context.with(KEY, this);
-        context.with(ParserContext.Key.WRAPPER_LOOKUP, this.server.registryAccess());
     }
 
 
@@ -124,8 +123,7 @@ public record PlaceholderContext(MinecraftServer server,
         if (entity instanceof ServerPlayer player) {
             return of(player, view);
         } else {
-            var world = (ServerLevel) entity.level();
-            return new PlaceholderContext(entity.getServer(), () -> entity.createCommandSourceStackForNameResolution(world), world, null, entity, null, view);
+            return new PlaceholderContext(entity.getServer(), entity::createCommandSourceStack, (ServerLevel) entity.level(), null, entity, null, view);
         }
     }
 
