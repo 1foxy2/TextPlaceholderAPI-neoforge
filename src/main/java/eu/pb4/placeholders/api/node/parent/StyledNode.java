@@ -3,7 +3,7 @@ package eu.pb4.placeholders.api.node.parent;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
-import net.minecraft.text.*;
+import net.minecraft.network.chat.*;
 import org.jetbrains.annotations.Nullable;
 
 public final class StyledNode extends SimpleStylingNode {

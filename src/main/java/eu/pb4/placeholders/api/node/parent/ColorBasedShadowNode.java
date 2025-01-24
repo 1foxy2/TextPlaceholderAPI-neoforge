@@ -3,12 +3,9 @@ package eu.pb4.placeholders.api.node.parent;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.impl.GeneralUtils;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.ColorHelper;
-
-import java.util.Arrays;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.ARGB;
 
 public final class ColorBasedShadowNode extends ParentNode {
     private final float scale;
@@ -23,12 +20,12 @@ public final class ColorBasedShadowNode extends ParentNode {
     }
 
     @Override
-    protected Text applyFormatting(MutableText out, ParserContext context) {
-        var defaultColor = ColorHelper.scaleRgb(context.getOrElse(ParserContext.Key.DEFAULT_TEXT_COLOR, 0xFFFFFF), this.scale) | 0xFF000000;
+    protected Component applyFormatting(MutableComponent out, ParserContext context) {
+        var defaultColor = ARGB.scaleRGB(context.getOrElse(ParserContext.Key.DEFAULT_TEXT_COLOR, 0xFFFFFF), this.scale) | 0xFF000000;
 
         return GeneralUtils.cloneTransformText(out, text -> {
                 var color = text.getStyle().getColor();
-                return text.setStyle(text.getStyle().withShadowColor(color != null ? ColorHelper.scaleRgb(color.getRgb(), this.scale) | 0xFF000000 : defaultColor));
+                return text.setStyle(text.getStyle().withShadowColor(color != null ? ARGB.scaleRGB(color.getValue(), this.scale) | 0xFF000000 : defaultColor));
             }, text -> text == out || text.getStyle().getShadowColor() == null && text.getStyle().getColor() != null);
     }
 

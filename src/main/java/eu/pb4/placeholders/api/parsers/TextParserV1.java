@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Original parser implementing Simple Text Format
+ * Original parser implementing Simple Component Format
  * <a href="https://placeholders.pb4.eu/user/text-format/">Format documentation</a>
  * <p>
  * Regex-based text parsing implementation. Should be always used first.

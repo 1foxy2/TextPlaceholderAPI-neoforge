@@ -7,7 +7,7 @@ import eu.pb4.placeholders.api.node.parent.ParentNode;
 import java.util.ArrayList;
 
 /**
- * Pre-parses TextNode into DirectTextNode with static vanilla Text for Nodes that aren't dynamic.
+ * Pre-parses TextNode into DirectTextNode with static vanilla Component for Nodes that aren't dynamic.
  * If you want to use this, it should be a last step of parsing into a "template" ((dynamic) placeholders should also be parsed before this).
  */
 public record StaticPreParser() implements NodeParser {

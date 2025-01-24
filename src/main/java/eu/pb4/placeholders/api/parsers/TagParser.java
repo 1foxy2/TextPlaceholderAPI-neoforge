@@ -11,10 +11,10 @@ import eu.pb4.placeholders.impl.textparser.providers.ModernProvider;
 import java.util.function.Function;
 
 /**
- * Parser implementing QuickText (Recommended) and Simplified Text Format (Previous).
+ * Parser implementing QuickText (Recommended) and Simplified Component Format (Previous).
  * QuickText with STF parser can support both at the same time.
  * <a href="https://placeholders.pb4.eu/user/quicktext/">Format documentation for QuckText</a>
- * <a href="https://placeholders.pb4.eu/user/text-format/">Format documentation for Simplified Text Format</a>
+ * <a href="https://placeholders.pb4.eu/user/text-format/">Format documentation for Simplified Component Format</a>
  */
 public final class TagParser implements NodeParser, TagLikeWrapper {
     private final TagRegistry registry;

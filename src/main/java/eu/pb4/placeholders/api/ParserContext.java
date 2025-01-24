@@ -1,6 +1,6 @@
 package eu.pb4.placeholders.api;
 
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.core.HolderLookup;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -60,7 +60,7 @@ public final class ParserContext {
 
     public record Key<T>(String key, @Nullable Class<T> type) {
         public static final Key<Boolean> COMPACT_TEXT = new Key<>("compact_text", Boolean.class);
-        public static final Key<RegistryWrapper.WrapperLookup> WRAPPER_LOOKUP = new Key<>("wrapper_lookup", RegistryWrapper.WrapperLookup.class);
+        public static final Key<HolderLookup.Provider> WRAPPER_LOOKUP = new Key<>("wrapper_lookup", HolderLookup.Provider.class);
         public static final Key<Integer> DEFAULT_TEXT_COLOR = new Key<>("default_text_color", Integer.class);
 
         public static <T> Key<T> of(String key, T type) {
