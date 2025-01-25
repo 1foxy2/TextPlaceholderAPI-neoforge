@@ -17,7 +17,7 @@ public class WorldPlaceholders {
     static final int CHUNK_AREA = (int)Math.pow(17.0D, 2.0D);
 
     public static void register() {
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "time"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -30,7 +30,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value(String.format("%02d:%02d", (dayTime / 60 + 6) % 24, dayTime % 60));
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time_alt"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "time_alt"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -47,7 +47,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value(String.format("%02d:%02d %s", y, dayTime % 60, x > 11 ? "PM" : "AM" ));
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "day"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "day"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -58,7 +58,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value("" + world.getDayTime() / 24000);
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "id"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "id"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -69,7 +69,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value(world.dimension().location().toString());
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "name"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "name"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -90,7 +90,7 @@ public class WorldPlaceholders {
 
 
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "player_count"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "player_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -101,7 +101,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value("" + world.players().size());
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count_colored"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "mob_count_colored"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -138,7 +138,7 @@ public class WorldPlaceholders {
             }
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "mob_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();
@@ -165,7 +165,7 @@ public class WorldPlaceholders {
             }
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_cap"), (ctx, arg) -> {
+        Placeholders.register(new ResourceLocation("world", "mob_cap"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().serverLevel();

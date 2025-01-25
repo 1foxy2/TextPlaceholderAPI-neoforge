@@ -1,17 +1,15 @@
 package eu.pb4.placeholders.api.node.parent;
-import com.mojang.serialization.DynamicOps;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.Style;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-public final class HoverNode<T, H> extends SimpleStylingNode {
+public final class HoverNode<T, H> extends ParentNode {
     private final Action<T, H> action;
     private final T value;
 
@@ -22,13 +20,13 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
     }
 
     @Override
-    protected Style style(ParserContext context) {
+    protected Component applyFormatting(MutableComponent out, ParserContext context) {
         if (this.action == Action.TEXT) {
-            return Style.EMPTY.withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), ((TextNode) this.value).toText(context, true)));
+            return out.setStyle(out.getStyle().withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), ((TextNode) this.value).toText(context, true))));
         } else if (this.action == Action.ENTITY) {
-            return Style.EMPTY.withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), ((EntityNodeContent) this.value).toVanilla(context)));
+            return out.setStyle(out.getStyle().withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), ((EntityNodeContent) this.value).toVanilla(context))));
         } else {
-            return Style.EMPTY.withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), this.value));
+            return out.setStyle(out.getStyle().withHoverEvent(new HoverEvent((HoverEvent.Action<Object>) this.action.vanillaType(), this.value)));
         }
 
     }
@@ -76,7 +74,7 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
         public static final Action<TextNode, Component> TEXT = new Action<>(HoverEvent.Action.SHOW_TEXT);
     }
 
-    public record EntityNodeContent(net.minecraft.world.entity.EntityType<?> entityType, UUID uuid, @Nullable TextNode name) {
+    public record EntityNodeContent(net.minecraft.world.entity.EntityType<?> entityType, UUID uuid, TextNode name) {
         public HoverEvent.EntityTooltipInfo toVanilla(ParserContext context) {
             return new HoverEvent.EntityTooltipInfo(this.entityType, this.uuid, this.name != null ? this.name.toText(context, true) : null);
         }

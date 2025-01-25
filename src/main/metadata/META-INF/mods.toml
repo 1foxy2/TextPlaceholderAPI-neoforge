@@ -18,8 +18,9 @@ badges=["library"]
 sources="https://github.com/1foxy2/TextPlaceholderAPI-neoforge" # a link to sources of the mod
 
 [[dependencies.${mod_id}]]
-    modId="neoforge"
+    modId="forge"
     type="required"
+    mandatory = true
     versionRange="${neo_version_range}"
     ordering="NONE"
     side="BOTH"
@@ -27,6 +28,7 @@ sources="https://github.com/1foxy2/TextPlaceholderAPI-neoforge" # a link to sour
 [[dependencies.${mod_id}]]
     modId="minecraft"
     type="required"
+    mandatory = true
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"

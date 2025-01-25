@@ -8,7 +8,6 @@ import eu.pb4.placeholders.api.node.parent.*;
 import eu.pb4.placeholders.impl.textparser.TextParserImpl;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.ChatFormatting;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -77,7 +76,15 @@ public final class MarkdownLiteParserV1 implements NodeParser {
             parseLiteral(literalNode, list::add);
             return parseSubNodes(list.listIterator(), null, -1, false);
         } else if (input instanceof TranslatedNode translatedNode) {
-            return new TextNode[]{ translatedNode.transform(this) };
+            var list = new ArrayList<>();
+            for (var arg : translatedNode.args()) {
+                if (arg instanceof TextNode textNode) {
+                    list.add(TextNode.asSingle(this.parseNodes(textNode)));
+                } else {
+                    list.add(arg);
+                }
+            }
+            return new TextNode[]{TranslatedNode.ofFallback(translatedNode.key(), translatedNode.fallback(), list.toArray())};
         } else if (input instanceof ParentTextNode parentTextNode) {
             var list = new ArrayList<SubNode<?>>();
             for (var children : parentTextNode.getChildren()) {
@@ -155,7 +162,7 @@ public final class MarkdownLiteParserV1 implements NodeParser {
         }
     }
 
-    private TextNode[] parseSubNodes(ListIterator<SubNode<?>> nodes, @Nullable SubNodeType endAt, int count, boolean requireEmpty) {
+    private TextNode[] parseSubNodes(ListIterator<SubNode<?>> nodes, SubNodeType endAt, int count, boolean requireEmpty) {
         var out = new ArrayList<TextNode>();
         int startIndex = nodes.nextIndex();
         var builder = new StringBuilder();

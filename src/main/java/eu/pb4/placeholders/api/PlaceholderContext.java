@@ -12,26 +12,25 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
 
 public record PlaceholderContext(MinecraftServer server,
                                  Supplier<CommandSourceStack> lazySource,
-                                 @Nullable ServerLevel world,
-                                 @Nullable ServerPlayer player,
-                                 @Nullable net.minecraft.world.entity.Entity entity,
-                                 @Nullable GameProfile gameProfile,
+                                 ServerLevel world,
+                                 ServerPlayer player,
+                                 net.minecraft.world.entity.Entity entity,
+                                 GameProfile gameProfile,
                                  ViewObject view
 ) {
 
     public PlaceholderContext(MinecraftServer server,
                               CommandSourceStack source,
-                              @Nullable ServerLevel world,
-                              @Nullable ServerPlayer player,
-                              @Nullable Entity entity,
-                              @Nullable GameProfile gameProfile,
+                              ServerLevel world,
+                              ServerPlayer player,
+                              Entity entity,
+                              GameProfile gameProfile,
                               ViewObject view
     ) {
         this(server, () -> source, world, player, entity, gameProfile, view);
@@ -43,10 +42,10 @@ public record PlaceholderContext(MinecraftServer server,
 
     public PlaceholderContext(MinecraftServer server,
                               CommandSourceStack source,
-                              @Nullable ServerLevel world,
-                              @Nullable ServerPlayer player,
-                              @Nullable Entity entity,
-                              @Nullable GameProfile gameProfile) {
+                              ServerLevel world,
+                              ServerPlayer player,
+                              Entity entity,
+                              GameProfile gameProfile) {
         this(server, source, world, player, entity, gameProfile, ViewObject.DEFAULT);
     }
 
@@ -129,7 +128,7 @@ public record PlaceholderContext(MinecraftServer server,
 
 
     public interface ViewObject {
-        ViewObject DEFAULT = of(ResourceLocation.fromNamespaceAndPath("placeholder_api", "default"));
+        ViewObject DEFAULT = of(new ResourceLocation("placeholder_api", "default"));
 
         static ViewObject of(ResourceLocation identifier) {
             return new ViewObjectImpl(identifier);

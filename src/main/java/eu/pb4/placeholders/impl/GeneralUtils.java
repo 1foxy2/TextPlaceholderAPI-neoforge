@@ -2,26 +2,23 @@ package eu.pb4.placeholders.impl;
 
 import eu.pb4.placeholders.api.node.*;
 import eu.pb4.placeholders.api.node.parent.*;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.contents.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.*;
 import net.minecraft.ChatFormatting;
-import net.neoforged.fml.loading.FMLEnvironment;
-import org.jetbrains.annotations.ApiStatus;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-
-@ApiStatus.Internal
 public class GeneralUtils {
     public static final Logger LOGGER = LoggerFactory.getLogger("Component Placeholder API");
     public static final boolean IS_DEV = !FMLEnvironment.production;
     public static final TextNode[] CASTER = new TextNode[0];
+
+    public static final boolean IS_LEGACY_TRANSLATION = false;
 
     public static String durationToString(long x) {
         long seconds = x % 60;
@@ -44,8 +41,8 @@ public class GeneralUtils {
 
     public static boolean isEmpty(Component text) {
         return (
-                text.getContents() == PlainTextContents.EMPTY
-                || (text.getContents() instanceof PlainTextContents.LiteralContents l && l.text().isEmpty())
+                text.getContents() == ComponentContents.EMPTY
+                || (text.getContents() instanceof LiteralContents l && l.text().isEmpty())
                ) && text.getSiblings().isEmpty();
     }
 
@@ -54,7 +51,7 @@ public class GeneralUtils {
     }
 
     private static int getGradientLength(Component base) {
-        int length = base.getContents() instanceof PlainTextContents.LiteralContents l ? l.text().length() : base.getContents() == PlainTextContents.EMPTY ? 0 : 1;
+        int length = base.getContents() instanceof LiteralContents l ? l.text().length() : base.getContents() == ComponentContents.EMPTY ? 0 : 1;
 
         for (var text : base.getSiblings()) {
             length += getGradientLength(text);
@@ -66,7 +63,7 @@ public class GeneralUtils {
     private static TextLengthPair recursiveGradient(Component base, GradientNode.GradientProvider posToColor, int pos, int totalLength) {
         if (base.getStyle().getColor() == null) {
             MutableComponent out = Component.empty().setStyle(base.getStyle());
-            if (base.getContents() instanceof PlainTextContents.LiteralContents literalTextContent) {
+            if (base.getContents() instanceof LiteralContents literalTextContent) {
                 var l = literalTextContent.text().length();
                 for (var i = 0; i < l; i++) {
                     var character = literalTextContent.text().charAt(i);
@@ -99,8 +96,56 @@ public class GeneralUtils {
         return new TextLengthPair(base.copy(), pos + base.getString().length());
     }
 
+    public static int hvsToRgb(float hue, float saturation, float value) {
+        int h = (int) (hue * 6) % 6;
+        float f = hue * 6 - h;
+        float p = value * (1 - saturation);
+        float q = value * (1 - f * saturation);
+        float t = value * (1 - (1 - f) * saturation);
+
+        return switch (h) {
+            case 0 -> rgbToInt(value, t, p);
+            case 1 -> rgbToInt(q, value, p);
+            case 2 -> rgbToInt(p, value, t);
+            case 3 -> rgbToInt(p, q, value);
+            case 4 -> rgbToInt(t, p, value);
+            case 5 -> rgbToInt(value, p, q);
+            default -> 0;
+        };
+    }
+
     public static int rgbToInt(float r, float g, float b) {
         return (((int) (r * 0xff)) & 0xFF) << 16 | (((int) (g * 0xff)) & 0xFF) << 8 | (((int) (b * 0xff) & 0xFF));
+    }
+
+    public static HSV rgbToHsv(int rgb) {
+        float b = (float) (rgb % 256) / 255;
+        rgb = rgb >> 8;
+        float g = (float) (rgb % 256) / 255;
+        rgb = rgb >> 8;
+        float r = (float) (rgb % 256) / 255;
+
+        float cmax = Math.max(r, Math.max(g, b));
+        float cmin = Math.min(r, Math.min(g, b));
+        float diff = cmax - cmin;
+        float h = -1, s = -1;
+
+        if (cmax == cmin) {
+            h = 0;
+        } else if (cmax == r) {
+            h = (0.1666f * ((g - b) / diff) + 1) % 1;
+        } else if (cmax == g) {
+            h = (0.1666f * ((b - r) / diff) + 0.333f) % 1;
+        } else if (cmax == b) {
+            h = (0.1666f * ((r - g) / diff) + 0.666f) % 1;
+        }
+        if (cmax == 0) {
+            s = 0;
+        } else {
+            s = (diff / cmax);
+        }
+
+        return new HSV(h, s, cmax);
     }
 
     public static Component deepTransform(Component input) {
@@ -190,12 +235,12 @@ public class GeneralUtils {
     public static Component getItemText(ItemStack stack, boolean rarity) {
         if (!stack.isEmpty()) {
             MutableComponent mutableText = Component.empty().append(stack.getHoverName());
-            if (stack.has(DataComponents.CUSTOM_NAME)) {
+            if (stack.hasCustomHoverName()) {
                 mutableText.withStyle(ChatFormatting.ITALIC);
             }
 
             if (rarity) {
-                mutableText.withStyle(stack.getRarity().color());
+                mutableText.withStyle(stack.getRarity().color);
             }
             mutableText.withStyle((style) -> {
                 return style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackInfo(stack)));
@@ -210,7 +255,7 @@ public class GeneralUtils {
     public static ParentNode convertToNodes(Component input) {
         var list = new ArrayList<TextNode>();
 
-        if (input.getContents() instanceof PlainTextContents.LiteralContents content) {
+        if (input.getContents() instanceof LiteralContents content) {
             list.add(new LiteralNode(content.text()));
         } else if (input.getContents() instanceof TranslatableContents content) {
             var args = new ArrayList<>();
@@ -224,8 +269,11 @@ public class GeneralUtils {
                 }
             }
 
-
-            list.add(TranslatedNode.ofFallback(content.getKey(), content.getFallback(), args.toArray()));
+            if (IS_LEGACY_TRANSLATION) {
+                list.add(TranslatedNode.of(content.getKey(), args.toArray()));
+            } else {
+                list.add(TranslatedNode.ofFallback(content.getKey(), content.getFallback(), args.toArray()));
+            }
         } else if (input.getContents() instanceof ScoreContents content) {
             list.add(new ScoreNode(content.getName(), content.getObjective()));
         } else if (input.getContents() instanceof KeybindContents content) {
@@ -273,6 +321,9 @@ public class GeneralUtils {
         } else {
             return node;
         }
+    }
+
+    public record HSV(float h, float s, float v) {
     }
 
     public record TextLengthPair(MutableComponent text, int length) {

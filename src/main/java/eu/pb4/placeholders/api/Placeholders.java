@@ -5,14 +5,11 @@ import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.node.parent.ParentNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.PatternPlaceholderParser;
-import eu.pb4.placeholders.api.parsers.TagLikeParser;
-import eu.pb4.placeholders.impl.placeholder.PlaceholderNode;
 import eu.pb4.placeholders.impl.placeholder.builtin.PlayerPlaceholders;
 import eu.pb4.placeholders.impl.placeholder.builtin.ServerPlaceholders;
 import eu.pb4.placeholders.impl.placeholder.builtin.WorldPlaceholders;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -45,7 +42,7 @@ public final class Placeholders {
 		}
 	};
 
-	public static final NodeParser DEFAULT_PLACEHOLDER_PARSER = TagLikeParser.placeholder(TagLikeParser.PLACEHOLDER, PlaceholderContext.KEY, DEFAULT_PLACEHOLDER_GETTER);
+	public static final NodeParser DEFAULT_PLACEHOLDER_PARSER = PatternPlaceholderParser.of(PLACEHOLDER_PATTERN, PlaceholderContext.KEY, DEFAULT_PLACEHOLDER_GETTER);
 
 	/**
 	 * Parses PlaceholderContext, can be used for parsing by hand
@@ -71,49 +68,34 @@ public final class Placeholders {
 	}
 
 	public static ParentNode parseNodes(TextNode node, ParserContext.Key<PlaceholderContext> contextKey) {
-		return asSingleParent(TagLikeParser.placeholder(TagLikeParser.PLACEHOLDER, contextKey, DEFAULT_PLACEHOLDER_GETTER).parseNodes(node));
-	}
-
-	/**
-	 * Parses placeholders in text
-	 * Placeholders have format of {@code %namespace:placeholder argument%}
-	 *
-	 * @return Component
-	 */
-	public static Component parseText(Component text, PlaceholderContext context) {
-		return parseNodes(TextNode.convert(text)).toText(ParserContext.of(PlaceholderContext.KEY, context));
-	}
-
-	public static Component parseText(TextNode textNode, PlaceholderContext context) {
-		return parseNodes(textNode).toText(ParserContext.of(PlaceholderContext.KEY, context));
+		return asSingleParent(PatternPlaceholderParser.of(PLACEHOLDER_PATTERN, contextKey, DEFAULT_PLACEHOLDER_GETTER).parseNodes(node));
 	}
 
 
-	@Deprecated
 	public static ParentNode parseNodes(TextNode node, Pattern pattern) {
 		return parseNodes(node, pattern, PlaceholderContext.KEY);
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, ParserContext.Key<PlaceholderContext> contextKey) {
 		return asSingleParent(PatternPlaceholderParser.of(pattern, contextKey, DEFAULT_PLACEHOLDER_GETTER).parseNodes(node));
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, PlaceholderGetter placeholderGetter) {
 		return parseNodes(node, pattern, placeholderGetter, PlaceholderContext.KEY);
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, PlaceholderGetter placeholderGetter, ParserContext.Key<PlaceholderContext> contextKey) {
 		return asSingleParent(PatternPlaceholderParser.of(pattern, contextKey, placeholderGetter).parseNodes(node));
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, Map<String, Component> placeholders) {
 		return asSingleParent(PatternPlaceholderParser.ofTextMap(pattern, placeholders).parseNodes(node));
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, Set<String> placeholders, ParserContext.Key<PlaceholderGetter> key) {
 		return parseNodes(node, pattern, placeholders, key, PlaceholderContext.KEY);
 	}
-	@Deprecated
+
 	public static ParentNode parseNodes(TextNode node, Pattern pattern, Set<String> placeholders, ParserContext.Key<PlaceholderGetter> key, ParserContext.Key<PlaceholderContext> contextKey) {
 		return asSingleParent(PatternPlaceholderParser.of(pattern, contextKey, new PlaceholderGetter() {
 			@Override
@@ -133,43 +115,55 @@ public final class Placeholders {
 			}
 		}).parseNodes(node));
 	}
-	@Deprecated
+
+	/**
+	 * Parses placeholders in text
+	 * Placeholders have format of {@code %namespace:placeholder argument%}
+	 *
+	 * @return Text
+	 */
+	public static Component parseText(Component text, PlaceholderContext context) {
+		return parseNodes(TextNode.convert(text)).toText(ParserContext.of(PlaceholderContext.KEY, context));
+	}
+
+
 	public static Component parseText(Component text, PlaceholderContext context, Pattern pattern) {
 		return parseNodes(TextNode.convert(text), pattern).toText(ParserContext.of(PlaceholderContext.KEY, context));
 	}
-	@Deprecated
+
 	public static Component parseText(Component text, PlaceholderContext context, Pattern pattern, PlaceholderGetter placeholderGetter) {
 		return parseNodes(TextNode.convert(text), pattern, placeholderGetter).toText(ParserContext.of(PlaceholderContext.KEY, context));
 	}
-	@Deprecated
+
 	public static Component parseText(Component text, Pattern pattern, Map<String, Component> placeholders) {
 		return parseNodes(TextNode.convert(text), pattern, placeholders).toText(ParserContext.of());
 	}
-	@Deprecated
+
 	public static Component parseText(Component text, Pattern pattern, Set<String> placeholders, ParserContext.Key<PlaceholderGetter> key) {
 		return parseNodes(TextNode.convert(text), pattern, placeholders, key).toText(ParserContext.of());
 	}
 
-	@Deprecated
+	public static Component parseText(TextNode textNode, PlaceholderContext context) {
+		return parseNodes(textNode).toText(ParserContext.of(PlaceholderContext.KEY, context));
+	}
+
 	public static Component parseText(TextNode textNode, PlaceholderContext context, Pattern pattern) {
 		return parseNodes(textNode, pattern).toText(ParserContext.of(PlaceholderContext.KEY, context));
 	}
 
-	@Deprecated
+
 	public static Component parseText(TextNode textNode, PlaceholderContext context, Pattern pattern, PlaceholderGetter placeholderGetter) {
 		return parseNodes(textNode, pattern, placeholderGetter).toText(ParserContext.of(PlaceholderContext.KEY, context));
 	}
 
-	@Deprecated
 	public static Component parseText(TextNode textNode, PlaceholderContext context, Pattern pattern, Map<String, Component> placeholders) {
 		return parseNodes(textNode, pattern, placeholders).toText(ParserContext.of(PlaceholderContext.KEY, context));
 	}
-	@Deprecated
+
 	public static Component parseText(TextNode textNode, Pattern pattern, Map<String, Component> placeholders) {
 		return parseNodes(textNode, pattern, placeholders).toText();
 	}
 
-	@Deprecated
 	public static Component parseText(TextNode textNode, Pattern pattern, Set<String> placeholders, ParserContext.Key<PlaceholderGetter> key) {
 		return parseNodes(textNode, pattern, placeholders, key).toText();
 	}
@@ -208,10 +202,8 @@ public final class Placeholders {
 	}
 
 	public interface PlaceholderGetter {
-		@Nullable
 		PlaceholderHandler getPlaceholder(String placeholder);
 
-		@Nullable
 		default PlaceholderHandler getPlaceholder(String placeholder, ParserContext context) {
 			return getPlaceholder(placeholder);
 		}

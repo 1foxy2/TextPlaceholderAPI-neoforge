@@ -4,7 +4,6 @@ import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.impl.GeneralUtils;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.Component;
 
 import java.util.Arrays;
@@ -75,11 +74,7 @@ public class ParentNode implements ParentTextNode {
         }
     }
 
-    protected Component applyFormatting(MutableComponent out, ParserContext context) { return out.setStyle(applyFormatting(out.getStyle(), context)); };
-
-    protected Style applyFormatting(Style style, ParserContext context) {
-        return style;
-    }
+    protected Component applyFormatting(MutableComponent out, ParserContext context) { return out; };
 
     @Override
     public String toString() {

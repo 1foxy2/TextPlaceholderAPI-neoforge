@@ -4,16 +4,15 @@ import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import net.minecraft.network.chat.*;
-import org.jetbrains.annotations.Nullable;
 
-public final class StyledNode extends SimpleStylingNode {
+public final class StyledNode extends ParentNode {
     private final Style style;
 
     private final ParentNode hoverValue;
     private final TextNode clickValue;
     private final TextNode insertion;
 
-    public StyledNode(TextNode[] children, Style style, @Nullable ParentNode hoverValue, @Nullable TextNode clickValue, @Nullable TextNode insertion) {
+    public StyledNode(TextNode[] children, Style style, ParentNode hoverValue, TextNode clickValue, TextNode insertion) {
         super(children);
         this.style = style;
         this.hoverValue = hoverValue;
@@ -43,19 +42,21 @@ public final class StyledNode extends SimpleStylingNode {
         return this.style;
     }
 
-    @Nullable
     public ParentNode hoverValue() {
         return hoverValue;
     }
 
-    @Nullable
     public TextNode clickValue() {
         return clickValue;
     }
 
-    @Nullable
     public TextNode insertion() {
         return insertion;
+    }
+
+    @Override
+    protected Component applyFormatting(MutableComponent out, ParserContext context) {
+        return (out.getStyle() == Style.EMPTY ? out : Component.empty().append(out)).setStyle(this.style(context));
     }
 
     @Override

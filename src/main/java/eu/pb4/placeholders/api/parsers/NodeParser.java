@@ -48,8 +48,4 @@ public interface NodeParser {
             default -> new MergedParser(parsers.toArray(new NodeParser[0]));
         };
     }
-
-    static ParserBuilder builder() {
-        return new ParserBuilder();
-    }
 }
