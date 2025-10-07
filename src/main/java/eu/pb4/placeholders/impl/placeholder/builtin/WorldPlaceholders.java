@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -33,7 +34,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time_alt"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -50,7 +51,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "day"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -61,7 +62,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "id"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -72,7 +73,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "name"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -93,7 +94,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "player_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -104,7 +105,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count_colored"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -141,7 +142,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -168,7 +169,7 @@ public class WorldPlaceholders {
         Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_cap"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
-                world = ctx.player().serverLevel();
+                world = ctx.player().level();
             } else {
                 world = ctx.server().overworld();
             }
@@ -190,6 +191,17 @@ public class WorldPlaceholders {
                 }
                 return PlaceholderResult.value("" + x * info.getSpawnableChunkCount() / CHUNK_AREA);
             }
+        });
+
+        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "weather"), (ctx, arg) -> {
+            Level world;
+            if (ctx.entity() != null) {
+                world = ctx.entity().level();
+            } else {
+                world = ctx.source().getLevel();
+            }
+
+            return PlaceholderResult.value(world.isThundering() ? "rain & thunder" : world.isRaining() ? "rain" : "clear");
         });
     }
 }

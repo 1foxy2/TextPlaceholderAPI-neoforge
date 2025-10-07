@@ -9,10 +9,11 @@ import eu.pb4.placeholders.impl.GeneralUtils;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.network.chat.contents.BlockDataSource;
-import net.minecraft.network.chat.contents.EntityDataSource;
-import net.minecraft.network.chat.contents.StorageDataSource;
+import net.minecraft.network.chat.contents.data.BlockDataSource;
+import net.minecraft.network.chat.contents.data.EntityDataSource;
+import net.minecraft.network.chat.contents.data.StorageDataSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.*;
@@ -146,7 +147,7 @@ public final class TextTagsV1 {
                                 textList.add(new ParentNode(parse(removeEscaping(cleanArgument(part)), handlers)));
                             }
 
-                            var out = TranslatedNode.of(removeEscaping(cleanArgument(lines[0])), textList.toArray(TextParserImpl.CASTER));
+                            var out = TranslatedNode.of(removeEscaping(cleanArgument(lines[0])), (Object[]) textList.toArray(TextParserImpl.CASTER));
                             return new TextParserV1.TagNodeValue(out, 0);
                         }
                         return TextParserV1.TagNodeValue.EMPTY;
@@ -172,7 +173,7 @@ public final class TextTagsV1 {
                                 textList.add(new ParentNode(parse(removeEscaping(cleanArgument(part)), handlers)));
                             }
 
-                            var out = TranslatedNode.ofFallback(removeEscaping(cleanArgument(lines[0])), removeEscaping(cleanArgument(lines[1])), textList.toArray(TextParserImpl.CASTER));
+                            var out = TranslatedNode.ofFallback(removeEscaping(cleanArgument(lines[0])), removeEscaping(cleanArgument(lines[1])), (Object[]) textList.toArray(TextParserImpl.CASTER));
                             return new TextParserV1.TagNodeValue(out, 0);
                         }
                         return TextParserV1.TagNodeValue.EMPTY;
@@ -197,8 +198,8 @@ public final class TextTagsV1 {
                 String[] lines = data.split(":", 2);
                 var out = recursiveParsing(input, handlers, endAt);
                 if (lines.length > 1) {
-                    for (ClickEvent.Action action : ClickEvent.Action.values()) {
-                        if (action.toString().equals(cleanArgument(lines[0]))) {
+                    for (var action : ClickEvent.Action.values()) {
+                        if (action.toString().equals(cleanArgument(lines[0])) && action.isAllowedFromServer()) {
                             return out.value(new ClickActionNode(out.nodes(), action, new LiteralNode(restoreOriginalEscaping(cleanArgument(lines[1])))));
                         }
                     }
@@ -305,14 +306,16 @@ public final class TextTagsV1 {
 
                                 try {
                                     if (lines.length > 1) {
-                                        HoverEvent.Action<?> action = HoverEvent.Action.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(cleanArgument(lines[0].toLowerCase(Locale.ROOT)))).result().orElse(null);
+                                        HoverEvent.Action action = HoverEvent.Action.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(cleanArgument(lines[0].toLowerCase(Locale.ROOT)))).result().orElse(null);
                                         if (action == HoverEvent.Action.SHOW_TEXT) {
-                                            return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT, new ParentNode(parse(restoreOriginalEscaping(cleanArgument(lines[1])), handlers))));
+                                            return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT_NODE,
+                                                    new ParentNode(parse(restoreOriginalEscaping(cleanArgument(lines[1])), handlers)
+                                                    )
+                                            ));
                                         } else if (action == HoverEvent.Action.SHOW_ENTITY) {
                                             lines = lines[1].split(":", 3);
                                             if (lines.length == 3) {
-                                                return out.value(new HoverNode<>(out.nodes(),
-                                                        HoverNode.Action.ENTITY,
+                                                return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.ENTITY_NODE,
                                                         new HoverNode.EntityNodeContent(
                                                                 EntityType.byString(restoreOriginalEscaping(restoreOriginalEscaping(cleanArgument(lines[0])))).orElse(EntityType.PIG),
                                                                 UUID.fromString(cleanArgument(lines[1])),
@@ -321,30 +324,34 @@ public final class TextTagsV1 {
                                             }
                                         } else if (action == HoverEvent.Action.SHOW_ITEM) {
                                             try {
-                                                return out.value(new HoverNode<>(out.nodes(),
-                                                        HoverNode.Action.ITEM_STACK,
-                                                        new HoverEvent.ItemStackInfo(ItemStack.parseOptional(RegistryAccess.EMPTY, TagParser.parseTag(restoreOriginalEscaping(cleanArgument(lines[1])))))
+                                                var nbt = TagParser.parseCompoundFully(restoreOriginalEscaping(cleanArgument(lines[1])));
+                                                return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.LAZY_ITEM_STACK,
+                                                        new HoverNode.LazyItemStackNodeContent<>(
+                                                                ResourceLocation.parse(nbt.getStringOr("id", "")),
+                                                                nbt.contains("count") ? nbt.getIntOr("count", 1) : 1,
+                                                                NbtOps.INSTANCE,
+                                                                nbt.contains("components") ? nbt.getCompound("components").orElse(null) : null
+                                                        )
                                                 ));
                                             } catch (Throwable e) {
                                                 lines = lines[1].split(":", 2);
                                                 if (lines.length > 0) {
-                                                    var stack = BuiltInRegistries.ITEM.getValue(ResourceLocation.tryParse(lines[0])).getDefaultInstance();
+                                                    var stack = BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(lines[0])).getDefaultInstance();
 
                                                     if (lines.length > 1) {
                                                         stack.setCount(Integer.parseInt(lines[1]));
                                                     }
 
-                                                    return out.value(new HoverNode<>(out.nodes(),
-                                                            HoverNode.Action.ITEM_STACK,
-                                                            new HoverEvent.ItemStackInfo(stack)
+                                                    return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.VANILLA_ITEM_STACK,
+                                                            new HoverEvent.ShowItem(stack)
                                                     ));
                                                 }
                                             }
                                         } else {
-                                            return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT, new ParentNode(parse(restoreOriginalEscaping(cleanArgument(data)), handlers))));
+                                            return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT_NODE, new ParentNode(parse(restoreOriginalEscaping(cleanArgument(data)), handlers))));
                                         }
                                     } else {
-                                        return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT, new ParentNode(parse(restoreOriginalEscaping(cleanArgument(data)), handlers))));
+                                        return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.TEXT_NODE, new ParentNode(parse(restoreOriginalEscaping(cleanArgument(data)), handlers))));
                                     }
                                 } catch (Exception e) {
                                     // Shut
@@ -504,7 +511,7 @@ public final class TextTagsV1 {
             );
         }
 
-        {
+        /*{
             TextParserV1.registerDefault(
                     TextParserV1.TextTag.of(
                             "raw_style",
@@ -513,7 +520,7 @@ public final class TextTagsV1 {
                             (tag, data, input, handlers, endAt) -> new TextParserV1.TagNodeValue(new DirectTextNode(Component.Serializer.fromJsonLenient(restoreOriginalEscaping(cleanArgument(data)), RegistryAccess.EMPTY)), 0)
                     )
             );
-        }
+        }*/
 
         {
             TextParserV1.registerDefault(
@@ -610,7 +617,7 @@ public final class TextTagsV1 {
                 case "all" -> x -> Style.EMPTY;
                 default -> x -> x;
             });
-        };
+        }
 
         return new GeneralUtils.MutableTransformer(func);
     }

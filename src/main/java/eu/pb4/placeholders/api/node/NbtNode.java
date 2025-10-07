@@ -1,8 +1,8 @@
 package eu.pb4.placeholders.api.node;
 
 import eu.pb4.placeholders.api.ParserContext;
-import net.minecraft.network.chat.contents.DataSource;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.data.DataSource;
 
 import java.util.Optional;
 

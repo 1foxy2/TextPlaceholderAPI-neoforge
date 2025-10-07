@@ -23,9 +23,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class ServerPlaceholders {
@@ -187,8 +185,10 @@ public class ServerPlaceholders {
                 }
                 try {
                     int position = Integer.parseInt(args[1]);
-                    Collection<PlayerScoreEntry> scoreboardEntries = scoreboard.listPlayerScores(scoreboardObjective);
-                    PlayerScoreEntry scoreboardEntry = scoreboardEntries.toArray(PlayerScoreEntry[]::new)[scoreboardEntries.size() - position];
+                    List<PlayerScoreEntry> scoreboardEntries = new ArrayList<>(scoreboard.listPlayerScores(scoreboardObjective));
+                    scoreboardEntries.sort(Comparator.comparingInt(PlayerScoreEntry::value).reversed());
+
+                    PlayerScoreEntry scoreboardEntry = scoreboardEntries.get(position - 1);
                     return PlaceholderResult.value(scoreboardEntry.ownerName());
                 } catch (Exception e) {
                     /* Into the void you go! */
@@ -207,12 +207,34 @@ public class ServerPlaceholders {
                 }
                 try {
                     int position = Integer.parseInt(args[1]);
-                    Collection<PlayerScoreEntry> scoreboardEntries = scoreboard.listPlayerScores(scoreboardObjective);
-                    PlayerScoreEntry scoreboardEntry = scoreboardEntries.toArray(PlayerScoreEntry[]::new)[scoreboardEntries.size() - position];
+                    List<PlayerScoreEntry> scoreboardEntries = new ArrayList<>(scoreboard.listPlayerScores(scoreboardObjective));
+                    scoreboardEntries.sort(Comparator.comparingInt(PlayerScoreEntry::value).reversed());
+
+                    PlayerScoreEntry scoreboardEntry = scoreboardEntries.get(position - 1);
                     return PlaceholderResult.value(String.valueOf(scoreboardEntry.value()));
                 } catch (Exception e) {
                     /* Into the void you go! */
                     return PlaceholderResult.invalid("Invalid position!");
+                }
+            }
+            return PlaceholderResult.invalid("Not enough arguments!");
+        });
+
+        Placeholders.register(ResourceLocation.fromNamespaceAndPath("server", "objective_score_player"), (ctx, arg) -> {
+            var args = arg.split(" ");
+            if (args.length >= 2) {
+                ServerScoreboard scoreboard = ctx.server().getScoreboard();
+                Objective scoreboardObjective = scoreboard.getObjective(args[0]);
+                if (scoreboardObjective == null) {
+                    return PlaceholderResult.invalid("Invalid Objective!");
+                }
+                try {
+                    Collection<PlayerScoreEntry> scoreboardEntries = scoreboard.listPlayerScores(scoreboardObjective);
+                    PlayerScoreEntry entry = scoreboardEntries.stream().filter(scoreboardEntry -> scoreboardEntry.ownerName().getString().equals(args[1])).toList().getFirst();
+
+                    return PlaceholderResult.value(String.valueOf(entry.value()));
+                } catch (Exception e) {
+                    return PlaceholderResult.invalid("Player Not Found!");
                 }
             }
             return PlaceholderResult.invalid("Not enough arguments!");

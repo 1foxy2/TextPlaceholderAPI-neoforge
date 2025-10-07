@@ -18,11 +18,14 @@ import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.*;
-import net.minecraft.network.chat.contents.BlockDataSource;
-import net.minecraft.network.chat.contents.EntityDataSource;
-import net.minecraft.network.chat.contents.StorageDataSource;
+import net.minecraft.network.chat.contents.data.BlockDataSource;
+import net.minecraft.network.chat.contents.data.EntityDataSource;
+import net.minecraft.network.chat.contents.data.StorageDataSource;
+import net.minecraft.network.chat.contents.objects.AtlasSprite;
+import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
@@ -32,6 +35,7 @@ import java.util.function.Function;
 public final class BuiltinTags {
     public static final TextColor DEFAULT_COLOR = TextColor.fromLegacyFormat(ChatFormatting.WHITE);
     public static void register() {
+        Function<String, TextColor> extenderColorResolver;
         {
             Map<ChatFormatting, List<String>> aliases = new HashMap<>();
             aliases.put(ChatFormatting.GOLD, List.of("orange"));
@@ -40,19 +44,27 @@ public final class BuiltinTags {
             aliases.put(ChatFormatting.DARK_PURPLE, List.of("purple"));
             aliases.put(ChatFormatting.DARK_GRAY, List.of("dark_grey"));
 
+            var alias2format = new HashMap<String, TextColor>();
+
             for (ChatFormatting formatting : ChatFormatting.values()) {
                 if (formatting.isFormat()) {
                     continue;
+                }
+                var alias = aliases.getOrDefault(formatting, List.of());
+
+                for (var x : alias) {
+                    alias2format.put(x, TextColor.fromLegacyFormat(formatting));
                 }
 
                 TagRegistry.registerDefault(
                         SimpleTags.color(
                                 formatting.getName(),
-                                aliases.containsKey(formatting) ? aliases.get(formatting) : List.of(),
+                                alias,
                                 formatting
                         )
                 );
             }
+            extenderColorResolver = DynamicColorNode.extendedTextColorParse(alias2format::get);
         }
 
         {
@@ -130,12 +142,12 @@ public final class BuiltinTags {
                             (nodes, data, parser) -> {
                                 try {
                                     if (data.contains("scale") && data.size() == 1) {
-                                        return new ColorBasedShadowNode(nodes, Float.parseFloat(data.get("scale", "0")));
+                                        return new DynamicShadowNode(nodes, Float.parseFloat(data.get("scale", "0")), 1);
                                     }
 
                                     var color = data.get("value", 0);
                                     if (color == null) {
-                                        return new ColorBasedShadowNode(nodes);
+                                        return new DynamicShadowNode(nodes);
                                     }
 
                                     int value;
@@ -145,9 +157,8 @@ public final class BuiltinTags {
                                             value = (value & 0xFFFFFF) | 0xFF000000;
                                         }
                                     } else {
-                                        value = TextColor.parseColor(color).getOrThrow().getValue() | 0xFF000000;
+                                        value = extenderColorResolver.apply(color).getValue() | 0xFF000000;
                                     }
-
 
                                     return new ShadowNode(nodes, value);
                                 } catch (Throwable e) {
@@ -162,10 +173,80 @@ public final class BuiltinTags {
                             "font",
                             "other_formatting",
                             false,
-                            (nodes, data, parser) -> new FontNode(nodes, ResourceLocation.tryParse(data.get("value", 0, "")))
+                            (nodes, data, parser) -> {
+                                var val = data.get("value");
+                                if (val == null) {
+                                    if (data.size() > 1) {
+                                        val = data.getNext("key", "minecraft") + ":" + data.getNext("path", "");
+                                    } else {
+                                        val = data.getNext("val");
+                                        if (val == null) {
+                                            val = data.input().strip();
+                                        }
+                                    }
+                                }
+                                return new FontNode(nodes, ResourceLocation.tryParse(val));
+                            }
                     )
             );
         }
+
+        {
+            var emptyId = ResourceLocation.parse("");
+            TagRegistry.registerDefault(
+                    TextTag.self(
+                            "atlas",
+                            "special",
+                            false,
+                            (nodes, data, parser) -> {
+                                var atlas = Objects.requireNonNullElse(ResourceLocation.tryParse(data.getNext("atlas", "")), emptyId);
+                                var texture = Objects.requireNonNullElse(ResourceLocation.tryParse(data.getNext("texture", "")), emptyId);
+
+                                return new ObjectNode(new AtlasSprite(atlas, texture));
+                            }
+                    )
+            );
+        }
+
+        {
+            var emptyId = ResourceLocation.parse("");
+            TagRegistry.registerDefault(
+                    TextTag.self(
+                            "player",
+                            "special",
+                            false,
+                            (nodes, data, parser) -> {
+                                var hat = SimpleArguments.bool(data.get("hat"), true);
+
+                                var next = data.getNext("name", "");
+                                var maybeUuid = data.get("uuid");
+                                UUID uuid = null;
+                                if (maybeUuid == null) {
+                                    try {
+                                        uuid = UUID.fromString(next);
+                                    } catch (Throwable ignored) {}
+                                } else {
+                                    try {
+                                        uuid = UUID.fromString(maybeUuid);
+                                    } catch (Throwable ignored) {}
+                                }
+
+                                if (uuid != null) {
+                                    try {
+                                        return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(uuid), hat));
+                                    } catch (Throwable e) {}
+                                }
+
+                                if (next != null) {
+                                    return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(next), hat));
+                                }
+
+                                return new ObjectNode(new AtlasSprite(emptyId, emptyId));
+                            }
+                    )
+            );
+        }
+
         {
             TagRegistry.registerDefault(TextTag.self(
                     "lang",
@@ -187,7 +268,7 @@ public final class BuiltinTags {
                                 textList.add(parser.parseNode(part));
                             }
 
-                            return TranslatedNode.ofFallback(key, fallback, textList.toArray(TextParserImpl.CASTER));
+                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextParserImpl.CASTER));
                         }
                         return TextNode.empty();
                     })
@@ -215,7 +296,7 @@ public final class BuiltinTags {
                                 textList.add(parser.parseNode(part));
                             }
 
-                            return TranslatedNode.ofFallback(key, fallback, textList.toArray(TextParserImpl.CASTER));
+                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextParserImpl.CASTER));
                         }
                         return TextNode.empty();
                     })
@@ -236,14 +317,56 @@ public final class BuiltinTags {
                         if (!data.isEmpty()) {
                             var type = data.getNext("type");
                             var value = data.getNext("value", "");
-                            for (ClickEvent.Action action : ClickEvent.Action.values()) {
-                                if (action.toString().equals(type)) {
-                                    return new ClickActionNode(nodes, action, parser.parseNode(value));
+                            var extraData = data.getNext("data", null);
+                            var extraData2 = data.getNested("data");
+
+                            for (var action : ClickEvent.Action.values()) {
+                                if (action.getSerializedName().equals(type) && action.isAllowedFromServer()) {
+                                    return new ClickActionNode(nodes, action, parser.parseNode(value),
+                                            extraData != null ? Either.left(parser.parseNode(extraData)) : (extraData2 != null ? Either.right(extraData2) : null));
                                 }
                             }
                         }
                         return new ParentNode(nodes);
                     }));
+        }
+
+        {
+            TagRegistry.registerDefault(
+                    TextTag.enclosing(
+                            "show_dialog",
+                            "click_action",
+                            false,
+                            (nodes, data, parser) -> {
+                                if (!data.isEmpty()) {
+                                    return new ClickActionNode(nodes, ClickEvent.Action.SHOW_DIALOG, parser.parseNode(data.get("value", 0, "")));
+                                }
+                                return new ParentNode(nodes);
+                            }
+                    )
+            );
+        }
+
+        {
+            TagRegistry.registerDefault(
+                    TextTag.enclosing(
+                            "custom_click",
+                            List.of("click"),
+                            "click_action",
+                            false,
+                            (nodes, data, parser) -> {
+                                if (!data.isEmpty()) {
+                                    var value = data.get("value", 0, "");
+                                    var extraData = data.get("data", 1);
+                                    var extraData2 = data.getNested("data");
+
+                                    return new ClickActionNode(nodes, ClickEvent.Action.CUSTOM, parser.parseNode(value),
+                                            extraData != null ? Either.left(parser.parseNode(extraData)) : (extraData2 != null ? Either.right(extraData2) : null));
+                                }
+                                return new ParentNode(nodes);
+                            }
+                    )
+            );
         }
 
         {
@@ -255,7 +378,7 @@ public final class BuiltinTags {
                             false,
                             (nodes, data, parser) -> {
                                 if (!data.isEmpty()) {
-                                    return new ClickActionNode(nodes, ClickEvent.Action.RUN_COMMAND, parser.parseNode(data.get("value", 0)));
+                                    return new ClickActionNode(nodes, ClickEvent.Action.RUN_COMMAND, parser.parseNode(data.get("value", 0, "")));
                                 }
                                 return new ParentNode(nodes);
                             }
@@ -290,7 +413,7 @@ public final class BuiltinTags {
                             false, (nodes, data, parser) -> {
 
                                 if (!data.isEmpty()) {
-                                    return new ClickActionNode(nodes, ClickEvent.Action.OPEN_URL, parser.parseNode(data.get("value", 0)));
+                                    return new ClickActionNode(nodes, ClickEvent.Action.OPEN_URL, parser.parseNode(data.get("value", 0, "")));
                                 }
                                 return new ParentNode(nodes);
                             }
@@ -339,55 +462,70 @@ public final class BuiltinTags {
                             (nodes, data, parser) -> {
                                 try {
                                     var type = data.get("type");
-
                                     if (type != null || data.size() > 1) {
                                         if (type == null) {
                                             type = data.getNext("type", "");
                                         }
                                         type = type.toLowerCase(Locale.ROOT);
-                                        if (type.equals("show_text") || type.equals("text")) {
-                                            return new HoverNode<>(nodes, HoverNode.Action.TEXT, parser.parseNode(
-                                                    data.getNext("value", "")
-                                            ));
-                                        } else if (type.equals("show_entity") || type.equals("entity")) {
-                                            return new HoverNode<>(nodes,
-                                                    HoverNode.Action.ENTITY,
-                                                    new HoverNode.EntityNodeContent(
-                                                            EntityType.byString(data.getNext("entity", "")).orElse(EntityType.PIG),
-                                                            UUID.fromString(data.getNext("uuid", Util.NIL_UUID.toString())),
-                                                            new ParentNode(parser.parseNode(data.get("name", 3, "")))
-                                                    ));
-                                        } else if (type.equals("show_item") || type.equals("item")) {
-                                            var value = data.getNext("value", "");
-                                            try {
-                                                var nbt = TagParser.parseTag(value);
-                                                var id = ResourceLocation.parse(nbt.getString("id"));
-                                                var count = nbt.contains("count") ? nbt.getInt("count") : 1;
-
-                                                var comps = nbt.getCompound("components");
-                                                return new HoverNode<>(nodes,
-                                                        HoverNode.Action.LAZY_ITEM_STACK,
-                                                        new HoverNode.LazyItemStackNodeContent<>(id, count, NbtOps.INSTANCE, comps));
-                                            } catch (Throwable ignored) {}
-                                            try {
-                                                var item = ResourceLocation.parse(data.get("item", value));
-                                                var count = 1;
-                                                var countTxt = data.getNext("count");
-                                                if (countTxt != null) {
-                                                    count = Integer.parseInt(countTxt);
-                                                }
-
-                                                return new HoverNode<>(nodes,
-                                                        HoverNode.Action.LAZY_ITEM_STACK,
-                                                        new HoverNode.LazyItemStackNodeContent<>(item, count,
-                                                                StringArgOps.INSTANCE, Either.right(data.getNestedOrEmpty("components")))
+                                        switch (type) {
+                                            case "show_text", "text" -> {
+                                                return new HoverNode<>(nodes, HoverNode.Action.TEXT_NODE,
+                                                        parser.parseNode(data.getNext("value", ""))
                                                 );
-                                            } catch (Throwable ignored) {}
-                                        } else {
-                                            return new HoverNode<>(nodes, HoverNode.Action.TEXT, parser.parseNode(data.get("value", type)));
+                                            }
+                                            case "show_entity", "entity" -> {
+                                                var entType = data.getNext("entity", "");
+                                                var uuid = data.getNext("uuid", Util.NIL_UUID.toString());
+
+                                                return new HoverNode<>(nodes, HoverNode.Action.ENTITY_NODE,
+                                                        new HoverNode.EntityNodeContent(EntityType.byString(entType).orElse(EntityType.PIG),
+                                                                UUID.fromString(uuid),
+                                                                new ParentNode(parser.parseNode(data.get("name", 3, "")))
+                                                        )
+                                                );
+                                            }
+                                            case "show_item", "item" -> {
+                                                var value = data.getNext("value", "");
+                                                try
+                                                {
+                                                    var nbt = TagParser.parseCompoundFully(value);
+
+                                                    return new HoverNode<>(nodes, HoverNode.Action.LAZY_ITEM_STACK,
+                                                            new HoverNode.LazyItemStackNodeContent<>(ResourceLocation.parse(nbt.getStringOr("id", "")),
+                                                                    nbt.contains("count") ? nbt.getIntOr("count", 1) : 1,
+                                                                    NbtOps.INSTANCE,
+                                                                    nbt.contains("components") ? nbt.getCompound("components").orElse(null) : null
+                                                            )
+                                                    );
+                                                }
+                                                catch (Throwable ignored) { }
+                                                try {
+                                                    var id = ResourceLocation.parse(data.get("item", value));
+                                                    var count = 1;
+                                                    var countTxt = data.getNext("count", "1");
+                                                    if (countTxt != null) {
+                                                        count = Integer.parseInt(countTxt);
+                                                    }
+
+                                                    return new HoverNode<>(nodes, HoverNode.Action.LAZY_ITEM_STACK,
+                                                            new HoverNode.LazyItemStackNodeContent<>(id, count,
+                                                                    StringArgOps.INSTANCE,
+                                                                    Either.right(data.getNestedOrEmpty("components"))
+                                                            )
+                                                    );
+                                                }
+                                                catch (Throwable ignored) { }
+                                            }
+                                            default -> {
+                                                return new HoverNode<>(nodes, HoverNode.Action.TEXT_NODE,
+                                                        parser.parseNode(data.get("value", type))
+                                                );
+                                            }
                                         }
                                     } else {
-                                        return new HoverNode<>(nodes, HoverNode.Action.TEXT, parser.parseNode(data.getNext("value")));
+                                        return new HoverNode<>(nodes, HoverNode.Action.TEXT_NODE,
+                                                parser.parseNode(data.getNext("value"))
+                                        );
                                     }
                                 } catch (Exception e) {
                                     // Shut
@@ -538,7 +676,7 @@ public final class BuiltinTags {
                                     System.out.println(x.error().get().message());
                                     return TextNode.asSingle(nodes);
                                 }
-                                return new StyledNode(nodes, x.result().get().getFirst(), null, null, null);
+                                return new StyledNode(nodes, x.result().get().getFirst(), (StyledNode.HoverData<?>) null, null, null);
                             }
                     )
             );

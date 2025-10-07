@@ -11,16 +11,16 @@ import net.minecraft.network.chat.Component;
  * You should use {@link eu.pb4.placeholders.api.parsers.ParserBuilder} for stacked parsing
  * or {@link eu.pb4.placeholders.api.parsers.TagParser} for only tags to text.
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public final class TextParserUtils {
     private TextParserUtils() {}
 
     public static Component formatText(String text) {
-        return formatNodes(text).toText(null, true);
+        return formatNodes(text).toText(ParserContext.of(), true);
     }
 
     public static Component formatTextSafe(String text) {
-        return formatNodesSafe(text).toText(null, true);
+        return formatNodesSafe(text).toText(ParserContext.of(), true);
     }
 
     public static Component formatText(String text, TextParserV1.TagParserGetter getter) {

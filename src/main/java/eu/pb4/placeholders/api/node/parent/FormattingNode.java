@@ -2,13 +2,14 @@ package eu.pb4.placeholders.api.node.parent;
 
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.ChatFormatting;
 
 import java.util.Arrays;
 
 
-public final class FormattingNode extends SimpleStylingNode {
+public final class FormattingNode extends SimpleStylingNode implements DynamicShadowNode.SimpleColoredTransformer {
     private final ChatFormatting[] formatting;
 
     public FormattingNode(TextNode[] children, ChatFormatting formatting) {
@@ -36,5 +37,26 @@ public final class FormattingNode extends SimpleStylingNode {
                 "formatting=" + formatting +
                 ", children=" + Arrays.toString(children) +
                 '}';
+    }
+
+    @Override
+    public int getDefaultShadowColor(Component out, float scale, float alpha, ParserContext context) {
+        for (var form : formatting) {
+            if (form.isColor()) {
+                //noinspection DataFlowIssue
+                return DynamicShadowNode.modifiedColor(form.getColor(), scale, alpha);
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean hasShadowColor(ParserContext context) {
+        for (var form : formatting) {
+            if (form.isColor()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

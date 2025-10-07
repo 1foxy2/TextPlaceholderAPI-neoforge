@@ -35,15 +35,21 @@ public class ParentNode implements ParentTextNode {
     @Override
     public final Component toText(ParserContext context, boolean removeBackslashes) {
         var compact = context != null && context.get(ParserContext.Key.COMPACT_TEXT) != Boolean.FALSE;
+        var oldShadow = context.get(ParserContext.Key.DEFAULT_SHADOW_STYLER);
+
+        if (this instanceof DynamicShadowNode.Transformer transformer && transformer.hasShadowColor(context)) {
+            context.with(ParserContext.Key.DEFAULT_SHADOW_STYLER, transformer);
+        }
 
         if (this.children.length == 0) {
+            context.with(ParserContext.Key.DEFAULT_SHADOW_STYLER, oldShadow);
             return Component.empty();
         } else if ((this.children.length == 1 && this.children[0] != null) && compact) {
             var out = this.children[0].toText(context, true);
             if (GeneralUtils.isEmpty(out)) {
                 return out;
             }
-
+            context.with(ParserContext.Key.DEFAULT_SHADOW_STYLER, oldShadow);
             return this.applyFormatting(out.copy(), context);
         } else {
             MutableComponent base = compact ? null : Component.empty();
@@ -66,6 +72,7 @@ public class ParentNode implements ParentTextNode {
                     }
                 }
             }
+            context.with(ParserContext.Key.DEFAULT_SHADOW_STYLER, oldShadow);
 
             if (base == null || GeneralUtils.isEmpty(base)) {
                 return Component.empty();
@@ -75,7 +82,9 @@ public class ParentNode implements ParentTextNode {
         }
     }
 
-    protected Component applyFormatting(MutableComponent out, ParserContext context) { return out.setStyle(applyFormatting(out.getStyle(), context)); };
+    protected Component applyFormatting(MutableComponent out, ParserContext context) {
+        return out.setStyle(applyFormatting(out.getStyle(), context));
+    };
 
     protected Style applyFormatting(Style style, ParserContext context) {
         return style;

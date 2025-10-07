@@ -9,10 +9,13 @@ import net.minecraft.network.chat.*;
 import net.minecraft.ChatFormatting;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -20,7 +23,7 @@ import java.util.function.Predicate;
 @ApiStatus.Internal
 public class GeneralUtils {
     public static final Logger LOGGER = LoggerFactory.getLogger("Component Placeholder API");
-    public static final boolean IS_DEV = !FMLEnvironment.production;
+    public static final boolean IS_DEV = !FMLEnvironment.isProduction();
     public static final TextNode[] CASTER = new TextNode[0];
 
     public static String durationToString(long x) {
@@ -50,7 +53,21 @@ public class GeneralUtils {
     }
 
     public static MutableComponent toGradient(Component base, GradientNode.GradientProvider posToColor) {
-        return recursiveGradient(base, posToColor, 0, getGradientLength(base)).text();
+        return recursiveGradient(base, posToColor, 0, getGradientLength(base),
+                text -> text.getStyle().getColor() == null,
+                Style::withColor,
+                Component::copy
+        ).text();
+    }
+
+    public static MutableComponent toGradientShadow(Component base, float scale, float alpha, GradientNode.GradientProvider posToColor) {
+        return recursiveGradient(base, posToColor, 0, getGradientLength(base),
+                text -> text.getStyle().getShadowColor() == null && text.getStyle().getColor() == null,
+                ((style, textColor) -> style.withShadowColor(DynamicShadowNode.modifiedColor(textColor.getValue(), scale, alpha))),
+                text2 -> text2.getStyle().getShadowColor() != null ? text2.copy() : GeneralUtils.cloneTransformText(text2, text -> {
+                    var color = text.getStyle().getColor();
+                    return text.setStyle(text.getStyle().withShadowColor(DynamicShadowNode.modifiedColor(Objects.requireNonNull(color).getValue(), scale, alpha)));
+                }, text -> text == text2 || text.getStyle().getShadowColor() == null && text.getStyle().getColor() != null)).text();
     }
 
     private static int getGradientLength(Component base) {
@@ -65,16 +82,19 @@ public class GeneralUtils {
         return length;
     }
 
-    private static TextLengthPair recursiveGradient(Component base, GradientNode.GradientProvider posToColor, int pos, int totalLength) {
-        if (base.getStyle().getColor() == null) {
+    private static TextLengthPair recursiveGradient(Component base, GradientNode.GradientProvider posToColor, int pos, int totalLength,
+                                                    Predicate<Component> canContinue,
+                                                    BiFunction<Style, TextColor, Style> apply,
+                                                    Function<Component, MutableComponent> passthroughApply) {
+        if (canContinue.test(base)) {
             MutableComponent out = Component.empty().setStyle(base.getStyle());
-            if (base.getContents() instanceof PlainTextContents.LiteralContents literalTextContent) {
-                var l = literalTextContent.text().length();
+            if (base.getContents() instanceof PlainTextContents.LiteralContents(String text)) {
+                var l = text.length();
                 for (var i = 0; i < l; i++) {
-                    var character = literalTextContent.text().charAt(i);
+                    var character = text.charAt(i);
                     int value;
                     if (Character.isHighSurrogate(character) && i + 1 < l) {
-                        var next = literalTextContent.text().charAt(++i);
+                        var next = text.charAt(++i);
                         if (Character.isLowSurrogate(next)) {
                             value = Character.toCodePoint(character, next);
                         } else {
@@ -84,21 +104,21 @@ public class GeneralUtils {
                         value = character;
                     }
 
-                    out.append(Component.literal(Character.toString(value)).setStyle(Style.EMPTY.withColor(posToColor.getColorAt(pos++, totalLength))));
+                    out.append(Component.literal(Character.toString(value)).setStyle(apply.apply(Style.EMPTY, posToColor.getColorAt(pos++, totalLength))));
 
                 }
-            } else {
-                out.append(base.plainCopy().setStyle(Style.EMPTY.withColor(posToColor.getColorAt(pos++, totalLength))));
+            } else if (base.getContents() != PlainTextContents.EMPTY) {
+                out.append(base.plainCopy().setStyle(apply.apply(Style.EMPTY, posToColor.getColorAt(pos++, totalLength))));
             }
 
             for (Component sibling : base.getSiblings()) {
-                var pair = recursiveGradient(sibling, posToColor, pos, totalLength);
+                var pair = recursiveGradient(sibling, posToColor, pos, totalLength, canContinue, apply, passthroughApply);
                 pos = pair.length;
                 out.append(pair.text);
             }
             return new TextLengthPair(out, pos);
         }
-        return new TextLengthPair(base.copy(), pos + base.getString().length());
+        return new TextLengthPair(passthroughApply.apply(base), pos + base.getString().length());
     }
 
     public static int rgbToInt(float r, float g, float b) {
@@ -206,9 +226,7 @@ public class GeneralUtils {
             if (rarity) {
                 mutableText.withStyle(stack.getRarity().color());
             }
-            mutableText.withStyle((style) -> {
-                return style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackInfo(stack)));
-            });
+            mutableText.withStyle((style) -> style.withHoverEvent(new HoverEvent.ShowItem(stack)));
 
             return mutableText;
         }
@@ -243,6 +261,8 @@ public class GeneralUtils {
             list.add(new SelectorNode(content.selector(), content.separator().map(GeneralUtils::convertToNodes)));
         } else if (input.getContents() instanceof NbtContents content) {
             list.add(new NbtNode(content.getNbtPath(), content.isInterpreting(), content.getSeparator().map(GeneralUtils::convertToNodes), content.getDataSource()));
+        } else if (input.getContents() instanceof ObjectContents content) {
+            list.add(new ObjectNode(content.contents()));
         }
 
 
@@ -254,14 +274,44 @@ public class GeneralUtils {
             return new ParentNode(list);
         } else {
             var style = input.getStyle();
-            var hoverValue = style.getHoverEvent() != null && style.getHoverEvent().getAction() == HoverEvent.Action.SHOW_TEXT
-                    ? convertToNodes(style.getHoverEvent().getValue(HoverEvent.Action.SHOW_TEXT)) : null;
-
-            var clickValue = style.getClickEvent() != null ? new LiteralNode(style.getClickEvent().getValue()) : null;
+            var hoverValue = style.getHoverEvent() != null ? getHoverValue(style) : null;
+            var clickValue = style.getClickEvent() != null ? getClickValue(style) : null;
             var insertion = style.getInsertion() != null ? new LiteralNode(style.getInsertion()) : null;
 
             return new StyledNode(list.toArray(new TextNode[0]), style, hoverValue, clickValue, insertion);
         }
+    }
+
+    private static StyledNode.HoverData<?> getHoverValue(Style style) {
+        if (style.getHoverEvent() != null) {
+            if (style.getHoverEvent() instanceof HoverEvent.ShowText showText) {
+                return new StyledNode.HoverData<>(HoverNode.Action.TEXT_NODE, convertToNodes(showText.value()));
+            } else if (style.getHoverEvent() instanceof HoverEvent.ShowEntity showEntity) {
+                return new StyledNode.HoverData<>(HoverNode.Action.ENTITY_NODE,
+                        new HoverNode.EntityNodeContent(showEntity.entity().type, showEntity.entity().uuid, showEntity.entity().name.map(GeneralUtils::convertToNodes).orElse(null)));
+            } else if (style.getHoverEvent() instanceof HoverEvent.ShowItem showItem) {
+                return new StyledNode.HoverData<>(HoverNode.Action.VANILLA_ITEM_STACK, showItem);
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static TextNode getClickValue(Style style) {
+        if (style.getClickEvent() != null) {
+            return switch (style.getClickEvent()) {
+                case ClickEvent.ChangePage event -> TextNode.of(String.valueOf(event.page()));
+                case ClickEvent.CopyToClipboard event -> TextNode.of(event.value());
+                case ClickEvent.OpenFile openFile -> TextNode.of(openFile.file().getPath());
+                case ClickEvent.OpenUrl openUrl -> TextNode.of(openUrl.uri().toString());
+                case ClickEvent.RunCommand runCommand -> TextNode.of(runCommand.command());
+                case ClickEvent.SuggestCommand suggestCommand -> TextNode.of(suggestCommand.command());
+                default -> null;
+            };
+        }
+
+        return null;
     }
 
     public static TextNode removeColors(TextNode node) {
@@ -275,7 +325,7 @@ public class GeneralUtils {
             if (node instanceof ColorNode || node instanceof FormattingNode) {
                 return new ParentNode(list.toArray(new TextNode[0]));
             } else if (node instanceof StyledNode styledNode) {
-                return new StyledNode(list.toArray(new TextNode[0]), styledNode.rawStyle().withColor((TextColor) null), styledNode.hoverValue(), styledNode.clickValue(), styledNode.insertion());
+                return new StyledNode(list.toArray(new TextNode[0]), styledNode.rawStyle().withColor((TextColor) null), styledNode.hover(), styledNode.clickValue(), styledNode.insertion());
             }
 
             return parentNode.copyWith(list.toArray(new TextNode[0]));

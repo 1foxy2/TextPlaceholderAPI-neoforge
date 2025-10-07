@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -96,8 +97,8 @@ public record PlaceholderContext(MinecraftServer server,
     }
 
     public static PlaceholderContext of(GameProfile profile, MinecraftServer server, ViewObject view) {
-        var name = profile.getName() != null ? profile.getName() : profile.getId().toString();
-        return new PlaceholderContext(server, () -> new CommandSourceStack(CommandSource.NULL, Vec3.ZERO, Vec2.ZERO, server.overworld(), server.getProfilePermissions(profile), name, Component.literal(name), server, null), null, null, null, profile, view);
+        var name = profile.name() != null ? profile.name() : profile.id().toString();
+        return new PlaceholderContext(server, () -> new CommandSourceStack(CommandSource.NULL, Vec3.ZERO, Vec2.ZERO, server.overworld(), server.getProfilePermissions(new NameAndId(profile)), name, Component.literal(name), server, null), null, null, null, profile, view);
     }
 
     public static PlaceholderContext of(ServerPlayer player) {
@@ -105,7 +106,7 @@ public record PlaceholderContext(MinecraftServer server,
     }
 
     public static PlaceholderContext of(ServerPlayer player, ViewObject view) {
-        return new PlaceholderContext(player.getServer(), player::createCommandSourceStack, player.serverLevel(), player, player, player.getGameProfile(), view);
+        return new PlaceholderContext(player.level().getServer(), player::createCommandSourceStack, player.level(), player, player, player.getGameProfile(), view);
     }
 
     public static PlaceholderContext of(CommandSourceStack source) {
@@ -125,7 +126,7 @@ public record PlaceholderContext(MinecraftServer server,
             return of(player, view);
         } else {
             var world = (ServerLevel) entity.level();
-            return new PlaceholderContext(entity.getServer(), () -> entity.createCommandSourceStackForNameResolution(world), world, null, entity, null, view);
+            return new PlaceholderContext(world.getServer(), () -> entity.createCommandSourceStackForNameResolution(world), world, null, entity, null, view);
         }
     }
 
