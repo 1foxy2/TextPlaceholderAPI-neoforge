@@ -5,7 +5,7 @@ import eu.pb4.placeholders.api.Placeholders;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
@@ -18,7 +18,7 @@ public class WorldPlaceholders {
     static final int CHUNK_AREA = (int)Math.pow(17.0D, 2.0D);
 
     public static void register() {
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "time"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -31,7 +31,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value(String.format("%02d:%02d", (dayTime / 60 + 6) % 24, dayTime % 60));
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "time_alt"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "time_alt"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -48,7 +48,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value(String.format("%02d:%02d %s", y, dayTime % 60, x > 11 ? "PM" : "AM" ));
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "day"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "day"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -59,7 +59,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value("" + world.getDayTime() / 24000);
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "id"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "id"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -67,10 +67,10 @@ public class WorldPlaceholders {
                 world = ctx.server().overworld();
             }
 
-            return PlaceholderResult.value(world.dimension().location().toString());
+            return PlaceholderResult.value(world.dimension().identifier().toString());
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "name"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "name"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -79,7 +79,7 @@ public class WorldPlaceholders {
             }
             List<String> parts = new ArrayList<>();
             {
-                String[] words = world.dimension().location().getPath().split("_");
+                String[] words = world.dimension().identifier().getPath().split("_");
                 for (String word : words) {
                     String[] s = word.split("", 2);
                     s[0] = s[0].toUpperCase(Locale.ROOT);
@@ -91,7 +91,7 @@ public class WorldPlaceholders {
 
 
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "player_count"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "player_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -102,7 +102,7 @@ public class WorldPlaceholders {
             return PlaceholderResult.value("" + world.players().size());
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count_colored"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "mob_count_colored"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -139,7 +139,7 @@ public class WorldPlaceholders {
             }
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_count"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "mob_count"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -166,7 +166,7 @@ public class WorldPlaceholders {
             }
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "mob_cap"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "mob_cap"), (ctx, arg) -> {
             ServerLevel world;
             if (ctx.player() != null) {
                 world = ctx.player().level();
@@ -193,7 +193,7 @@ public class WorldPlaceholders {
             }
         });
 
-        Placeholders.register(ResourceLocation.fromNamespaceAndPath("world", "weather"), (ctx, arg) -> {
+        Placeholders.register(Identifier.fromNamespaceAndPath("world", "weather"), (ctx, arg) -> {
             Level world;
             if (ctx.entity() != null) {
                 world = ctx.entity().level();

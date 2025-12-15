@@ -13,7 +13,7 @@ import eu.pb4.placeholders.api.parsers.tag.TextTag;
 import eu.pb4.placeholders.impl.GeneralUtils;
 import eu.pb4.placeholders.impl.StringArgOps;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
@@ -23,7 +23,7 @@ import net.minecraft.network.chat.contents.data.EntityDataSource;
 import net.minecraft.network.chat.contents.data.StorageDataSource;
 import net.minecraft.network.chat.contents.objects.AtlasSprite;
 import net.minecraft.network.chat.contents.objects.PlayerSprite;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.ApiStatus;
@@ -185,22 +185,22 @@ public final class BuiltinTags {
                                         }
                                     }
                                 }
-                                return new FontNode(nodes, ResourceLocation.tryParse(val));
+                                return new FontNode(nodes, Identifier.tryParse(val));
                             }
                     )
             );
         }
 
         {
-            var emptyId = ResourceLocation.parse("");
+            var emptyId = Identifier.parse("");
             TagRegistry.registerDefault(
                     TextTag.self(
                             "atlas",
                             "special",
                             false,
                             (nodes, data, parser) -> {
-                                var atlas = Objects.requireNonNullElse(ResourceLocation.tryParse(data.getNext("atlas", "")), emptyId);
-                                var texture = Objects.requireNonNullElse(ResourceLocation.tryParse(data.getNext("texture", "")), emptyId);
+                                var atlas = Objects.requireNonNullElse(Identifier.tryParse(data.getNext("atlas", "")), emptyId);
+                                var texture = Objects.requireNonNullElse(Identifier.tryParse(data.getNext("texture", "")), emptyId);
 
                                 return new ObjectNode(new AtlasSprite(atlas, texture));
                             }
@@ -209,7 +209,7 @@ public final class BuiltinTags {
         }
 
         {
-            var emptyId = ResourceLocation.parse("");
+            var emptyId = Identifier.parse("");
             TagRegistry.registerDefault(
                     TextTag.self(
                             "player",
@@ -491,7 +491,7 @@ public final class BuiltinTags {
                                                     var nbt = TagParser.parseCompoundFully(value);
 
                                                     return new HoverNode<>(nodes, HoverNode.Action.LAZY_ITEM_STACK,
-                                                            new HoverNode.LazyItemStackNodeContent<>(ResourceLocation.parse(nbt.getStringOr("id", "")),
+                                                            new HoverNode.LazyItemStackNodeContent<>(Identifier.parse(nbt.getStringOr("id", "")),
                                                                     nbt.contains("count") ? nbt.getIntOr("count", 1) : 1,
                                                                     NbtOps.INSTANCE,
                                                                     nbt.contains("components") ? nbt.getCompound("components").orElse(null) : null
@@ -500,7 +500,7 @@ public final class BuiltinTags {
                                                 }
                                                 catch (Throwable ignored) { }
                                                 try {
-                                                    var id = ResourceLocation.parse(data.get("item", value));
+                                                    var id = Identifier.parse(data.get("item", value));
                                                     var count = 1;
                                                     var countTxt = data.getNext("count", "1");
                                                     if (countTxt != null) {
@@ -727,7 +727,7 @@ public final class BuiltinTags {
                                 var type = switch (source) {
                                     case "block" -> new BlockDataSource(cleanLine1);
                                     case "entity" -> new EntityDataSource(cleanLine1);
-                                    case "storage" -> new StorageDataSource(ResourceLocation.tryParse(cleanLine1));
+                                    case "storage" -> new StorageDataSource(Identifier.tryParse(cleanLine1));
                                     default -> null;
                                 };
 

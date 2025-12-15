@@ -5,7 +5,7 @@ import eu.pb4.placeholders.impl.placeholder.ViewObjectImpl;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -132,12 +132,12 @@ public record PlaceholderContext(MinecraftServer server,
 
 
     public interface ViewObject {
-        ViewObject DEFAULT = of(ResourceLocation.fromNamespaceAndPath("placeholder_api", "default"));
+        ViewObject DEFAULT = of(Identifier.fromNamespaceAndPath("placeholder_api", "default"));
 
-        static ViewObject of(ResourceLocation identifier) {
+        static ViewObject of(Identifier identifier) {
             return new ViewObjectImpl(identifier);
         }
 
-        ResourceLocation identifier();
+        Identifier identifier();
     }
 }

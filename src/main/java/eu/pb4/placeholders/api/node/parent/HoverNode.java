@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -162,7 +162,7 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
         }
     }
 
-    public record LazyItemStackNodeContent<T>(ResourceLocation identifier, int count, DynamicOps<T> ops, T componentMap) {
+    public record LazyItemStackNodeContent<T>(Identifier identifier, int count, DynamicOps<T> ops, T componentMap) {
         public ItemStack toVanilla(HolderLookup.Provider lookup) {
             var stack = new ItemStack(lookup.lookupOrThrow(Registries.ITEM).getOrThrow(ResourceKey.create(Registries.ITEM, identifier)));
             stack.setCount(count);

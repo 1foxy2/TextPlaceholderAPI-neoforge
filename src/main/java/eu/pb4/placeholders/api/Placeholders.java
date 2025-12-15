@@ -11,7 +11,7 @@ import eu.pb4.placeholders.impl.placeholder.builtin.PlayerPlaceholders;
 import eu.pb4.placeholders.impl.placeholder.builtin.ServerPlaceholders;
 import eu.pb4.placeholders.impl.placeholder.builtin.WorldPlaceholders;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -29,14 +29,14 @@ public final class Placeholders {
     @Deprecated(forRemoval = true)
 	public static final Pattern PREDEFINED_PLACEHOLDER_PATTERN = PatternPlaceholderParser.PREDEFINED_PLACEHOLDER_PATTERN;
 
-	private static final HashMap<ResourceLocation, PlaceholderHandler> PLACEHOLDERS = new HashMap<>();
+	private static final HashMap<Identifier, PlaceholderHandler> PLACEHOLDERS = new HashMap<>();
 
 	private static final List<PlaceholderListChangedCallback> CHANGED_CALLBACKS = new ArrayList<>();
 
 	public static final PlaceholderGetter DEFAULT_PLACEHOLDER_GETTER = new PlaceholderGetter() {
 		@Override
 		public PlaceholderHandler getPlaceholder(String placeholder) {
-			return PLACEHOLDERS.get(ResourceLocation.tryParse(placeholder));
+			return PLACEHOLDERS.get(Identifier.tryParse(placeholder));
 		}
 
 		@Override
@@ -52,7 +52,7 @@ public final class Placeholders {
 	 *
 	 * @return PlaceholderResult
 	 */
-	public static PlaceholderResult parsePlaceholder(ResourceLocation identifier, String argument, PlaceholderContext context) {
+	public static PlaceholderResult parsePlaceholder(Identifier identifier, String argument, PlaceholderContext context) {
 		if (PLACEHOLDERS.containsKey(identifier)) {
 			return PLACEHOLDERS.get(identifier).onPlaceholderRequest(context, argument);
 		} else {
@@ -177,7 +177,7 @@ public final class Placeholders {
 	/**
 	 * Registers new placeholder for identifier
 	 */
-	public static void register(ResourceLocation identifier, PlaceholderHandler handler) {
+	public static void register(Identifier identifier, PlaceholderHandler handler) {
 		PLACEHOLDERS.put(identifier, handler);
 		for (var e : CHANGED_CALLBACKS) {
 			e.onPlaceholderListChange(identifier, false);
@@ -187,7 +187,7 @@ public final class Placeholders {
 	/**
 	 * Removes placeholder
 	 */
-	public static void remove(ResourceLocation identifier) {
+	public static void remove(Identifier identifier) {
 		if (PLACEHOLDERS.remove(identifier) != null) {
 			for (var e : CHANGED_CALLBACKS) {
 				e.onPlaceholderListChange(identifier, true);
@@ -195,7 +195,7 @@ public final class Placeholders {
 		}
 	}
 
-	public static ImmutableMap<ResourceLocation, PlaceholderHandler> getPlaceholders() {
+	public static ImmutableMap<Identifier, PlaceholderHandler> getPlaceholders() {
 		return ImmutableMap.copyOf(PLACEHOLDERS);
 	}
 
@@ -204,7 +204,7 @@ public final class Placeholders {
 	}
 
 	public interface PlaceholderListChangedCallback {
-		void onPlaceholderListChange(ResourceLocation identifier, boolean removed);
+		void onPlaceholderListChange(Identifier identifier, boolean removed);
 	}
 
 	public interface PlaceholderGetter {

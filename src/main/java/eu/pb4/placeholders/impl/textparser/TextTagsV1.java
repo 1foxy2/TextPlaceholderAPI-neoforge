@@ -18,7 +18,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.*;
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.*;
@@ -123,7 +123,7 @@ public final class TextTagsV1 {
                             "font",
                             "other_formatting",
                             false,
-                            wrap((nodes, data) -> new FontNode(nodes, ResourceLocation.tryParse(cleanArgument(data))))
+                            wrap((nodes, data) -> new FontNode(nodes, Identifier.tryParse(cleanArgument(data))))
                     )
             );
         }
@@ -327,7 +327,7 @@ public final class TextTagsV1 {
                                                 var nbt = TagParser.parseCompoundFully(restoreOriginalEscaping(cleanArgument(lines[1])));
                                                 return out.value(new HoverNode<>(out.nodes(), HoverNode.Action.LAZY_ITEM_STACK,
                                                         new HoverNode.LazyItemStackNodeContent<>(
-                                                                ResourceLocation.parse(nbt.getStringOr("id", "")),
+                                                                Identifier.parse(nbt.getStringOr("id", "")),
                                                                 nbt.contains("count") ? nbt.getIntOr("count", 1) : 1,
                                                                 NbtOps.INSTANCE,
                                                                 nbt.contains("components") ? nbt.getCompound("components").orElse(null) : null
@@ -336,7 +336,7 @@ public final class TextTagsV1 {
                                             } catch (Throwable e) {
                                                 lines = lines[1].split(":", 2);
                                                 if (lines.length > 0) {
-                                                    var stack = BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(lines[0])).getDefaultInstance();
+                                                    var stack = BuiltInRegistries.ITEM.getValue(Identifier.parse(lines[0])).getDefaultInstance();
 
                                                     if (lines.length > 1) {
                                                         stack.setCount(Integer.parseInt(lines[1]));
@@ -578,7 +578,7 @@ public final class TextTagsV1 {
                                 var type = switch (lines[0]) {
                                     case "block" -> new BlockDataSource(cleanLine1);
                                     case "entity" -> new EntityDataSource(cleanLine1);
-                                    case "storage" -> new StorageDataSource(ResourceLocation.tryParse(cleanLine1));
+                                    case "storage" -> new StorageDataSource(Identifier.tryParse(cleanLine1));
                                     default -> null;
                                 };
 

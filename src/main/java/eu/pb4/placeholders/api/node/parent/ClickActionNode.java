@@ -19,7 +19,7 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.dialog.Dialog;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,7 +84,7 @@ public final class ClickActionNode extends SimpleStylingNode {
                     }
 
                     yield Style.EMPTY.withClickEvent(new ClickEvent.Custom(
-                            ResourceLocation.parse(this.value.toText(context).getString()),
+                            Identifier.parse(this.value.toText(context).getString()),
                             this.data == null ? Optional.empty() : Optional.of(data.left().isPresent()
                                     ? TagParser.create(wrapper.createSerializationContext(NbtOps.INSTANCE)).parseFully(this.data.left().orElseThrow().toText(context).getString())
                                     : StringArgOps.INSTANCE.convertTo(NbtOps.INSTANCE, Either.right(this.data.right().orElseThrow()))
@@ -107,7 +107,7 @@ public final class ClickActionNode extends SimpleStylingNode {
                 Holder<Dialog> dialogRegistryEntry = null;
                 var data = this.value.toText(context).getString();
 
-                var id = ResourceLocation.tryParse(data);
+                var id = Identifier.tryParse(data);
 
                 if (id != null) {
                     dialogRegistryEntry = wrapper.get(ResourceKey.create(Registries.DIALOG, id)).orElse(null);
