@@ -1,6 +1,10 @@
 package eu.pb4.placeholders.impl.textparser;
 
 
+import com.google.common.collect.ImmutableMultimap;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.datafixers.util.Either;
 import eu.pb4.placeholders.api.arguments.SimpleArguments;
 import eu.pb4.placeholders.api.arguments.StringArgs;
@@ -13,17 +17,13 @@ import eu.pb4.placeholders.api.parsers.tag.TextTag;
 import eu.pb4.placeholders.impl.GeneralUtils;
 import eu.pb4.placeholders.impl.StringArgOps;
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
-import net.minecraft.commands.arguments.selector.SelectorPattern;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.*;
-import net.minecraft.network.chat.contents.data.BlockDataSource;
-import net.minecraft.network.chat.contents.data.EntityDataSource;
-import net.minecraft.network.chat.contents.data.StorageDataSource;
 import net.minecraft.network.chat.contents.objects.AtlasSprite;
 import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.jetbrains.annotations.ApiStatus;
@@ -34,6 +34,7 @@ import java.util.function.Function;
 @ApiStatus.Internal
 public final class BuiltinTags {
     public static final TextColor DEFAULT_COLOR = TextColor.fromLegacyFormat(ChatFormatting.WHITE);
+
     public static void register() {
         Function<String, TextColor> extenderColorResolver;
         {
@@ -127,7 +128,7 @@ public final class BuiltinTags {
                             "color",
                             true,
                             (nodes, data, parser) -> {
-                                return new DynamicColorNode(nodes, parser.parseNode(data.get("value", 0, "white")));
+                                return new DynamicColorNode(nodes, parser.parseNode(data.get("value", 0, "white")), extenderColorResolver);
                             })
             );
         }
@@ -201,8 +202,9 @@ public final class BuiltinTags {
                             (nodes, data, parser) -> {
                                 var atlas = Objects.requireNonNullElse(Identifier.tryParse(data.getNext("atlas", "")), emptyId);
                                 var texture = Objects.requireNonNullElse(Identifier.tryParse(data.getNext("texture", "")), emptyId);
+                                var fallback = Optional.ofNullable(data.get("fallback")).map(parser::parseNode);
 
-                                return new ObjectNode(new AtlasSprite(atlas, texture));
+                                return new ObjectNode(new AtlasSprite(atlas, texture), fallback);
                             }
                     )
             );
@@ -216,32 +218,48 @@ public final class BuiltinTags {
                             "special",
                             false,
                             (nodes, data, parser) -> {
+                                var fallback = Optional.ofNullable(data.get("fallback")).map(parser::parseNode);
                                 var hat = SimpleArguments.bool(data.get("hat"), true);
+
+                                var texture = data.get("texture");
+
+                                if (texture != null) {
+                                    PropertyMap map = new PropertyMap(ImmutableMultimap.of("textures", new Property("textures", texture, null)));
+                                    return new ObjectNode(new PlayerSprite(ResolvableProfile.createResolved(new GameProfile(Util.NIL_UUID, "", map)), hat), fallback);
+                                }
 
                                 var next = data.getNext("name", "");
                                 var maybeUuid = data.get("uuid");
+
+                                if (maybeUuid != null) {
+                                    return new DynamicPlayerHeadNode(parser.parseNode(maybeUuid), hat, DynamicPlayerHeadNode.Type.UUID, fallback);
+                                }
+
                                 UUID uuid = null;
                                 if (maybeUuid == null) {
                                     try {
                                         uuid = UUID.fromString(next);
-                                    } catch (Throwable ignored) {}
+                                    } catch (Throwable ignored) {
+                                    }
                                 } else {
                                     try {
                                         uuid = UUID.fromString(maybeUuid);
-                                    } catch (Throwable ignored) {}
+                                    } catch (Throwable ignored) {
+                                    }
                                 }
 
                                 if (uuid != null) {
                                     try {
-                                        return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(uuid), hat));
-                                    } catch (Throwable e) {}
+                                        return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(uuid), hat), fallback);
+                                    } catch (Throwable e) {
+                                    }
                                 }
 
                                 if (next != null) {
-                                    return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(next), hat));
+                                    return new DynamicPlayerHeadNode(parser.parseNode(next), hat, DynamicPlayerHeadNode.Type.EITHER, fallback);
                                 }
 
-                                return new ObjectNode(new AtlasSprite(emptyId, emptyId));
+                                return new ObjectNode(new PlayerSprite(ResolvableProfile.createUnresolved(""), hat), fallback);
                             }
                     )
             );
@@ -268,7 +286,7 @@ public final class BuiltinTags {
                                 textList.add(parser.parseNode(part));
                             }
 
-                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextParserImpl.CASTER));
+                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextNode[]::new));
                         }
                         return TextNode.empty();
                     })
@@ -296,7 +314,7 @@ public final class BuiltinTags {
                                 textList.add(parser.parseNode(part));
                             }
 
-                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextParserImpl.CASTER));
+                            return TranslatedNode.ofFallback(key, fallback, (Object[]) textList.toArray(TextNode[]::new));
                         }
                         return TextNode.empty();
                     })
@@ -486,8 +504,7 @@ public final class BuiltinTags {
                                             }
                                             case "show_item", "item" -> {
                                                 var value = data.getNext("value", "");
-                                                try
-                                                {
+                                                try {
                                                     var nbt = TagParser.parseCompoundFully(value);
 
                                                     return new HoverNode<>(nodes, HoverNode.Action.LAZY_ITEM_STACK,
@@ -497,8 +514,8 @@ public final class BuiltinTags {
                                                                     nbt.contains("components") ? nbt.getCompound("components").orElse(null) : null
                                                             )
                                                     );
+                                                } catch (Throwable ignored) {
                                                 }
-                                                catch (Throwable ignored) { }
                                                 try {
                                                     var id = Identifier.parse(data.get("item", value));
                                                     var count = 1;
@@ -513,8 +530,8 @@ public final class BuiltinTags {
                                                                     Either.right(data.getNestedOrEmpty("components"))
                                                             )
                                                     );
+                                                } catch (Throwable ignored) {
                                                 }
-                                                catch (Throwable ignored) { }
                                             }
                                             default -> {
                                                 return new HoverNode<>(nodes, HoverNode.Action.TEXT_NODE,
@@ -705,11 +722,7 @@ public final class BuiltinTags {
                                 var sel = data.getNext("pattern", "@p");
                                 var arg = data.getNext("separator");
 
-                                Optional<SelectorPattern> selector = SelectorPattern.parse(sel).result();
-                                if (selector.isEmpty()) {
-                                    return TextNode.empty();
-                                }
-                                return new SelectorNode(selector.get(), arg != null ? Optional.of(TextNode.of(arg)) : Optional.empty());
+                                return new SelectorNode(parser.parseNode(sel), arg != null ? Optional.of(TextNode.of(arg)) : Optional.empty());
                             }
                     )
             );
@@ -722,26 +735,17 @@ public final class BuiltinTags {
                             "special",
                             false, (nodes, data, parser) -> {
                                 String source = data.getNext("source", "");
-                                var cleanLine1 = data.getNext("path", "");
-
-                                var type = switch (source) {
-                                    case "block" -> new BlockDataSource(cleanLine1);
-                                    case "entity" -> new EntityDataSource(cleanLine1);
-                                    case "storage" -> new StorageDataSource(Identifier.tryParse(cleanLine1));
-                                    default -> null;
-                                };
-
-                                if (type == null) {
-                                    return TextNode.empty();
-                                }
+                                var type = data.getNext("type", "");
+                                var path = data.getNext("path", "");
 
                                 var separ = data.getNext("separator");
 
                                 Optional<TextNode> separator = separ != null ?
                                         Optional.of(TextNode.asSingle(parser.parseNode(separ))) : Optional.empty();
                                 var shouldInterpret = SimpleArguments.bool(data.getNext("interpret"), false);
+                                var plain = SimpleArguments.bool(data.getNext("plain"), false);
 
-                                return new NbtNode(cleanLine1, shouldInterpret, separator, type);
+                                return new NbtNode(type, path, source, shouldInterpret, plain, separator);
                             }
                     )
             );

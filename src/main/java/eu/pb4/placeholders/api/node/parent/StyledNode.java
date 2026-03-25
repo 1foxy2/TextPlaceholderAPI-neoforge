@@ -1,14 +1,14 @@
 package eu.pb4.placeholders.api.node.parent;
 
-import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.ParserContext;
+import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
-import net.minecraft.network.chat.*;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.Style;
+import org.jspecify.annotations.Nullable;
 
 import java.net.URI;
-
-import static net.minecraft.network.chat.ClickEvent.Action.*;
 
 public final class StyledNode extends SimpleStylingNode {
     private final Style style;
@@ -37,7 +37,7 @@ public final class StyledNode extends SimpleStylingNode {
         }
 
         if (this.clickValue != null && style.getClickEvent() != null) {
-            String node = this.clickValue.toText(context, true).getString();
+            String node = this.clickValue.toComponent(context, true).getString();
             switch (style.getClickEvent().action()) {
                 case OPEN_URL -> {
                     try {
@@ -49,14 +49,14 @@ public final class StyledNode extends SimpleStylingNode {
                     } catch (Exception ignored) { }
                 }
                 case OPEN_FILE -> style = style.withClickEvent(new ClickEvent.OpenFile(node));
-                case RUN_COMMAND -> style = style.withClickEvent(new ClickEvent.RunCommand(node));
-                case SUGGEST_COMMAND -> style = style.withClickEvent(new ClickEvent.SuggestCommand(node));
-                case COPY_TO_CLIPBOARD -> style = style.withClickEvent(new ClickEvent.CopyToClipboard(node));
+				case RUN_COMMAND -> style = style.withClickEvent(new ClickEvent.RunCommand(node));
+				case SUGGEST_COMMAND -> style = style.withClickEvent(new ClickEvent.SuggestCommand(node));
+				case COPY_TO_CLIPBOARD -> style = style.withClickEvent(new ClickEvent.CopyToClipboard(node));
             }
         }
 
         if (this.insertion != null) {
-            style = style.withInsertion(this.insertion.toText(context, true).getString());
+            style = style.withInsertion(this.insertion.toComponent(context, true).getString());
         }
         return style;
     }
@@ -64,12 +64,6 @@ public final class StyledNode extends SimpleStylingNode {
 
     public Style rawStyle() {
         return this.style;
-    }
-
-    @Deprecated(forRemoval = true)
-    @Nullable
-    public ParentNode hoverValue() {
-        return hoverValue != null && hoverValue.data instanceof TextNode textNode ? new ParentNode(textNode) : null;
     }
 
     @Nullable

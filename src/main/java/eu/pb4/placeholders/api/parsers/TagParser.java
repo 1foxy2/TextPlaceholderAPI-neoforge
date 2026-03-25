@@ -3,18 +3,18 @@ package eu.pb4.placeholders.api.parsers;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.tag.TagRegistry;
 import eu.pb4.placeholders.api.parsers.tag.TextTag;
-import eu.pb4.placeholders.impl.textparser.providers.LegacyProvider;
 import eu.pb4.placeholders.impl.textparser.SingleTagLikeParser;
+import eu.pb4.placeholders.impl.textparser.providers.LegacyProvider;
 import eu.pb4.placeholders.impl.textparser.providers.LenientProvider;
 import eu.pb4.placeholders.impl.textparser.providers.ModernProvider;
 
 import java.util.function.Function;
 
 /**
- * Parser implementing QuickText (Recommended) and Simplified Component Format (Previous).
+ * Parser implementing QuickText (Recommended) and Simplified Text Format (Previous).
  * QuickText with STF parser can support both at the same time.
  * <a href="https://placeholders.pb4.eu/user/quicktext/">Format documentation for QuckText</a>
- * <a href="https://placeholders.pb4.eu/user/text-format/">Format documentation for Simplified Component Format</a>
+ * <a href="https://placeholders.pb4.eu/user/text-format/">Format documentation for Simplified Text Format</a>
  */
 public final class TagParser implements NodeParser, TagLikeWrapper {
     private final TagRegistry registry;

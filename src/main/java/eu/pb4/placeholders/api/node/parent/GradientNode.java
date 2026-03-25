@@ -6,8 +6,8 @@ import eu.pb4.placeholders.impl.GeneralUtils;
 import eu.pb4.placeholders.impl.color.HSV;
 import eu.pb4.placeholders.impl.color.OkLab;
 import eu.pb4.placeholders.impl.color.OkLch;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
 

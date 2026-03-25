@@ -1,28 +1,36 @@
 package eu.pb4.placeholders.impl;
 
+import com.mojang.datafixers.util.Either;
 import eu.pb4.placeholders.api.node.*;
 import eu.pb4.placeholders.api.node.parent.*;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.contents.*;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.network.chat.*;
 import net.minecraft.ChatFormatting;
+import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.contents.*;
+import net.minecraft.network.chat.contents.data.BlockDataSource;
+import net.minecraft.network.chat.contents.data.EntityDataSource;
+import net.minecraft.network.chat.contents.data.StorageDataSource;
+import net.minecraft.network.chat.contents.objects.ObjectInfo;
+import net.minecraft.util.CompilableString;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-
 @ApiStatus.Internal
 public class GeneralUtils {
-    public static final Logger LOGGER = LoggerFactory.getLogger("Component Placeholder API");
+    public static final Logger LOGGER = LoggerFactory.getLogger("Text Placeholder API");
     public static final boolean IS_DEV = !FMLEnvironment.isProduction();
     public static final TextNode[] CASTER = new TextNode[0];
 
@@ -48,8 +56,10 @@ public class GeneralUtils {
     public static boolean isEmpty(Component text) {
         return (
                 text.getContents() == PlainTextContents.EMPTY
-                || (text.getContents() instanceof PlainTextContents.LiteralContents l && l.text().isEmpty())
-               ) && text.getSiblings().isEmpty();
+                        || (text.getContents() instanceof PlainTextContents.LiteralContents(
+                        String text1
+                ) && text1.isEmpty())
+        ) && text.getSiblings().isEmpty();
     }
 
     public static MutableComponent toGradient(Component base, GradientNode.GradientProvider posToColor) {
@@ -71,8 +81,8 @@ public class GeneralUtils {
     }
 
     private static int getGradientLength(Component base) {
-        int length = base.getContents() instanceof PlainTextContents.LiteralContents l
-                ? l.text().codePointCount(0, l.text().length())
+        int length = base.getContents() instanceof PlainTextContents.LiteralContents(String text)
+                ? text.codePointCount(0, text.length())
                 : base.getContents() == PlainTextContents.EMPTY ? 0 : 1;
 
         for (var text : base.getSiblings()) {
@@ -186,6 +196,7 @@ public class GeneralUtils {
     public static MutableComponent cloneTransformText(Component input, Function<MutableComponent, MutableComponent> transform) {
         return cloneTransformText(input, transform, text -> true);
     }
+
     public static MutableComponent cloneTransformText(Component input, Function<MutableComponent, MutableComponent> transform, Predicate<Component> canContinue) {
         if (!canContinue.test(input)) {
             return input.copy();
@@ -226,7 +237,7 @@ public class GeneralUtils {
             if (rarity) {
                 mutableText.withStyle(stack.getRarity().color());
             }
-            mutableText.withStyle((style) -> style.withHoverEvent(new HoverEvent.ShowItem(stack)));
+            mutableText.withStyle((style) -> style.withHoverEvent(new HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(stack))));
 
             return mutableText;
         }
@@ -237,8 +248,8 @@ public class GeneralUtils {
     public static ParentNode convertToNodes(Component input) {
         var list = new ArrayList<TextNode>();
 
-        if (input.getContents() instanceof PlainTextContents.LiteralContents content) {
-            list.add(new LiteralNode(content.text()));
+        if (input.getContents() instanceof PlainTextContents.LiteralContents(String text1)) {
+            list.add(new LiteralNode(text1));
         } else if (input.getContents() instanceof TranslatableContents content) {
             var args = new ArrayList<>();
             for (var arg : content.getArgs()) {
@@ -251,20 +262,36 @@ public class GeneralUtils {
                 }
             }
 
-
             list.add(TranslatedNode.ofFallback(content.getKey(), content.getFallback(), args.toArray()));
-        } else if (input.getContents() instanceof ScoreContents content) {
-            list.add(new ScoreNode(content.name(), content.objective()));
+        } else if (input.getContents() instanceof ScoreContents(
+                Either<CompilableString<EntitySelector>, String> name,
+                String objective
+        )) {
+            list.add(new ScoreNode(name, objective));
         } else if (input.getContents() instanceof KeybindContents content) {
             list.add(new KeybindNode(content.getName()));
-        } else if (input.getContents() instanceof SelectorContents content) {
-            list.add(new SelectorNode(content.selector(), content.separator().map(GeneralUtils::convertToNodes)));
+        } else if (input.getContents() instanceof SelectorContents(
+                CompilableString<EntitySelector> selector,
+                Optional<Component> separator
+        )) {
+            list.add(new SelectorNode(TextNode.of(selector.source()), separator.map(GeneralUtils::convertToNodes)));
         } else if (input.getContents() instanceof NbtContents content) {
-            list.add(new NbtNode(content.getNbtPath(), content.isInterpreting(), content.getSeparator().map(GeneralUtils::convertToNodes), content.getDataSource()));
-        } else if (input.getContents() instanceof ObjectContents content) {
-            list.add(new ObjectNode(content.contents()));
+            list.add(new NbtNode(switch (content.dataSource()) {
+                case BlockDataSource _ -> "block";
+                case EntityDataSource _ -> "entity";
+                case StorageDataSource _ -> "storage";
+                default -> "";
+            }, content.nbtPath().source(), (switch (content.dataSource()) {
+                case BlockDataSource x -> x.coordinates().source();
+                case EntityDataSource x -> x.selector().source();
+                case StorageDataSource x -> x.id();
+                default -> "";
+            }).toString(), content.interpreting(), content.plain(), content.separator().map(GeneralUtils::convertToNodes)));
+        } else if (input.getContents() instanceof ObjectContents(
+                ObjectInfo contents, Optional<Component> fallback
+        )) {
+            list.add(new ObjectNode(contents, fallback.map(GeneralUtils::convertToNodes)));
         }
-
 
         for (var child : input.getSiblings()) {
             list.add(convertToNodes(child));
@@ -284,11 +311,11 @@ public class GeneralUtils {
 
     private static StyledNode.HoverData<?> getHoverValue(Style style) {
         if (style.getHoverEvent() != null) {
-            if (style.getHoverEvent() instanceof HoverEvent.ShowText showText) {
-                return new StyledNode.HoverData<>(HoverNode.Action.TEXT_NODE, convertToNodes(showText.value()));
-            } else if (style.getHoverEvent() instanceof HoverEvent.ShowEntity showEntity) {
+            if (style.getHoverEvent() instanceof HoverEvent.ShowText(Component value)) {
+                return new StyledNode.HoverData<>(HoverNode.Action.TEXT_NODE, convertToNodes(value));
+            } else if (style.getHoverEvent() instanceof HoverEvent.ShowEntity(HoverEvent.EntityTooltipInfo entity)) {
                 return new StyledNode.HoverData<>(HoverNode.Action.ENTITY_NODE,
-                        new HoverNode.EntityNodeContent(showEntity.entity().type, showEntity.entity().uuid, showEntity.entity().name.map(GeneralUtils::convertToNodes).orElse(null)));
+                        new HoverNode.EntityNodeContent(entity.type, entity.uuid, entity.name.map(GeneralUtils::convertToNodes).orElse(null)));
             } else if (style.getHoverEvent() instanceof HoverEvent.ShowItem showItem) {
                 return new StyledNode.HoverData<>(HoverNode.Action.VANILLA_ITEM_STACK, showItem);
             }
@@ -334,6 +361,10 @@ public class GeneralUtils {
         }
     }
 
+    public static MutableComponent objectComponent(ObjectInfo objectInfo, Optional<Component> fallback) {
+        return fallback.isEmpty() ? Component.object(objectInfo) : Component.object(objectInfo, fallback.orElseThrow());
+    }
+
     public record TextLengthPair(MutableComponent text, int length) {
         public static final TextLengthPair EMPTY = new TextLengthPair(null, 0);
     }
@@ -341,7 +372,8 @@ public class GeneralUtils {
     public record Pair<L, R>(L left, R right) {
     }
 
-    public record MutableTransformer(Function<Style, Style> textMutableTextFunction) implements Function<MutableComponent, Component> {
+    public record MutableTransformer(
+            Function<Style, Style> textMutableTextFunction) implements Function<MutableComponent, Component> {
         public static final MutableTransformer CLEAR = new MutableTransformer(x -> Style.EMPTY);
 
         @Override

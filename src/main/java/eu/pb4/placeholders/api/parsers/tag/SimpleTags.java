@@ -2,8 +2,8 @@ package eu.pb4.placeholders.api.parsers.tag;
 
 import eu.pb4.placeholders.api.node.parent.ColorNode;
 import eu.pb4.placeholders.api.node.parent.FormattingNode;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.TextColor;
 
 import java.util.Collection;
 

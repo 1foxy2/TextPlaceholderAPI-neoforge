@@ -2,20 +2,18 @@ package eu.pb4.placeholders.api.node.parent;
 
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.placeholders.api.ParserContext;
-import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.item.ItemStackTemplate;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -30,6 +28,7 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
         this.action = action;
         this.value = value;
     }
+
     public Action<T, H> action() {
         return this.action;
     }
@@ -56,53 +55,51 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
             return this.copyWith(children);
         } else if (this.action == Action.TEXT_NODE) {
             return new HoverNode<>(children,
-                    Action.TEXT_NODE,
-                    parser.parseNode((TextNode) this.value)
+                                   Action.TEXT_NODE,
+                                   parser.parseNode((TextNode) this.value)
             );
         } else if (this.action == Action.ENTITY_NODE &&
-                ((EntityNodeContent) this.value).name != null) {
+                  ((EntityNodeContent) this.value).name != null) {
             var val = ((EntityNodeContent) this.value);
             return new HoverNode<>(children,
-                    Action.ENTITY_NODE,
-                    new EntityNodeContent(val.entityType, val.uuid, parser.parseNode(val.name))
+                                   Action.ENTITY_NODE,
+                                   new EntityNodeContent(val.entityType, val.uuid, parser.parseNode(val.name))
             );
         } else if (this.action == Action.LAZY_ITEM_STACK &&
-                ((LazyItemStackNodeContent<T>) this.value).identifier != null) {
+                  ((LazyItemStackNodeContent<T>) this.value).identifier != null) {
             var val = ((LazyItemStackNodeContent<T>) this.value);
             return new HoverNode<>(children,
-                    Action.LAZY_ITEM_STACK,
-                    new LazyItemStackNodeContent<>(val.identifier, val.count, val.ops, val.componentMap)
+                                   Action.LAZY_ITEM_STACK,
+                                   new LazyItemStackNodeContent<>(val.identifier, val.count, val.ops, val.componentMap)
             );
         } else if (this.action == Action.VANILLA_ITEM_STACK &&
-                ((HoverEvent.ShowItem) this.value).item() != null) {
+                  ((HoverEvent.ShowItem) this.value).item() != null) {
             var val = ((HoverEvent.ShowItem) this.value).item();
             return new HoverNode<>(children,
-                    Action.VANILLA_ITEM_STACK,
-                    new HoverEvent.ShowItem(val)
+                                   Action.VANILLA_ITEM_STACK,
+                                   new HoverEvent.ShowItem(val)
             );
         } else if (this.action == Action.VANILLA_ENTITY &&
-                ((HoverEvent.ShowEntity) this.value).entity() != null) {
+                  ((HoverEvent.ShowEntity) this.value).entity() != null) {
             var val = ((HoverEvent.ShowEntity) this.value).entity();
             return new HoverNode<>(children,
-                    Action.VANILLA_ENTITY,
-                    new HoverEvent.ShowEntity(val)
+                                   Action.VANILLA_ENTITY,
+                                   new HoverEvent.ShowEntity(val)
             );
         } return this.copyWith(children);
     }
 
 
     @Nullable
-    public static <T> HoverEvent toVanilla(HoverNode.Action<T, ?> action, T value, ParserContext context) {
+    public static <T> HoverEvent toVanilla(Action<T, ?> action, T value, ParserContext context) {
         if (action == Action.TEXT_NODE) {
-            return new HoverEvent.ShowText(((TextNode) value).toText(context.copyWithoutNodeContext(), true));
+            return new HoverEvent.ShowText(((TextNode) value).toComponent(context.copyWithoutNodeContext(), true));
         } else if (action == Action.ENTITY_NODE) {
             return new HoverEvent.ShowEntity(((EntityNodeContent) value).toVanilla(context.copyWithoutNodeContext()));
         } else if (action == Action.LAZY_ITEM_STACK) {
             HolderLookup.Provider wrapper;
-            if (context.contains(ParserContext.Key.WRAPPER_LOOKUP)) {
-                wrapper = context.getOrThrow(ParserContext.Key.WRAPPER_LOOKUP);
-            } else if (context.contains(PlaceholderContext.KEY)) {
-                wrapper = context.getOrThrow(PlaceholderContext.KEY).server().registryAccess();
+            if (context.contains(ParserContext.Key.HOLDER_LOOKUP)) {
+                wrapper = context.getOrThrow(ParserContext.Key.HOLDER_LOOKUP);
             } else {
                 return null;
             }
@@ -147,7 +144,7 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
 
     public record EntityNodeContent(EntityType<?>entityType, UUID uuid, @Nullable TextNode name) {
         public HoverEvent.EntityTooltipInfo toVanilla(ParserContext context) {
-            return new HoverEvent.EntityTooltipInfo(this.entityType, this.uuid, Optional.ofNullable(this.name != null ? this.name.toText(context, true) : null));
+            return new HoverEvent.EntityTooltipInfo(this.entityType, this.uuid, Optional.ofNullable(this.name != null ? this.name.toComponent(context, true) : null));
         }
 
         @Override
@@ -157,19 +154,18 @@ public final class HoverNode<T, H> extends SimpleStylingNode {
                     + ",uuid=["+
                     uuid.toString()
                     + "],name={" +
-                    (name != null ? name.toText().tryCollapseToString() : "<NULL>")
+                    (name != null ? name.toComponent().tryCollapseToString() : "<NULL>")
                     + "}}";
         }
     }
 
     public record LazyItemStackNodeContent<T>(Identifier identifier, int count, DynamicOps<T> ops, T componentMap) {
-        public ItemStack toVanilla(HolderLookup.Provider lookup) {
-            var stack = new ItemStack(lookup.lookupOrThrow(Registries.ITEM).getOrThrow(ResourceKey.create(Registries.ITEM, identifier)));
-            stack.setCount(count);
+        public ItemStackTemplate toVanilla(HolderLookup.Provider lookup) {
+            var patch = DataComponentPatch.EMPTY;
             if (componentMap != null) {
-                stack.applyComponentsAndValidate(DataComponentPatch.CODEC.decode(lookup.createSerializationContext(ops), componentMap).getOrThrow().getFirst());
+                patch = DataComponentPatch.CODEC.decode(lookup.createSerializationContext(ops), componentMap).getOrThrow().getFirst();
             }
-            return stack;
+            return new ItemStackTemplate(lookup.lookupOrThrow(Registries.ITEM).getOrThrow(ResourceKey.create(Registries.ITEM, identifier)), count, patch);
         }
 
         @Override

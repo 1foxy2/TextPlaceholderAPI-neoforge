@@ -1,7 +1,6 @@
 package eu.pb4.placeholders.impl.color;
 
 import eu.pb4.placeholders.impl.GeneralUtils;
-
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 

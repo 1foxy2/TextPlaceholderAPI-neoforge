@@ -1,47 +1,30 @@
 package eu.pb4.placeholders.api;
 
-import eu.pb4.placeholders.api.parsers.TextParserV1;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 
 public final class PlaceholderResult {
-    private final Component text;
-    private String string;
+    private final Component component;
     private final boolean valid;
 
     private PlaceholderResult(Component text, String reason) {
         if (text != null) {
-            this.text = text;
+            this.component = text;
             this.valid = true;
         } else {
-            this.text = Component.literal("[" + (reason != null ? reason : "Invalid placeholder!") + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.GRAY).withItalic(true));
+            this.component = Component.literal("[" + (reason != null ? reason : "Invalid placeholder!") + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.GRAY).withItalic(true));
             this.valid = false;
         }
     }
 
     /**
-     * Returns text component from placeholder
+     * Returns component component from placeholder
      *
-     * @return Component
+     * @return Text
      */
-    public Component text() {
-        return this.text;
-    }
-
-    /**
-     * Returns text component as String (without formatting) from placeholder
-     * It's not recommended for general usage, as it makes it text static/unable to change depending on player's language or other settings
-     * and removes all styling.
-     *
-     * @return String
-     */
-    @Deprecated
-    public String string() {
-        if (this.string == null) {
-            this.string = this.text.getString();
-        }
-        return this.string;
+    public Component component() {
+        return this.component;
     }
 
     /**
@@ -76,8 +59,8 @@ public final class PlaceholderResult {
      *
      * @return PlaceholderResult
      */
-    public static PlaceholderResult value(Component text) {
-        return new PlaceholderResult(text, null);
+    public static PlaceholderResult value(Component component) {
+        return new PlaceholderResult(component, null);
     }
 
     /**
@@ -85,8 +68,8 @@ public final class PlaceholderResult {
      *
      * @return PlaceholderResult
      */
-    public static PlaceholderResult value(String text) {
-        return new PlaceholderResult(TextParserV1.DEFAULT.parseText(text, null), null);
+    public static PlaceholderResult value(String component) {
+        return new PlaceholderResult(Component.literal(component), null);
     }
 }
 

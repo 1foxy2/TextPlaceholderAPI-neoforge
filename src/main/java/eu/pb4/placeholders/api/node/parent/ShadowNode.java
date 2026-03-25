@@ -16,7 +16,7 @@ public final class ShadowNode extends SimpleStylingNode {
 
     @Override
     protected Style style(ParserContext context) {
-        return Style.EMPTY.withColor(this.color);
+        return Style.EMPTY.withShadowColor(this.color);
     }
 
     @Override

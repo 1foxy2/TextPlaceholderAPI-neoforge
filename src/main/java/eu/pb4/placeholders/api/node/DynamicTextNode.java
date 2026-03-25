@@ -1,9 +1,9 @@
 package eu.pb4.placeholders.api.node;
 
 import eu.pb4.placeholders.api.ParserContext;
-import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -13,11 +13,11 @@ public record DynamicTextNode(String id, ParserContext.Key<Function<String, Comp
     }
 
     public static ParserContext.Key<Function<String, @Nullable Component>> key(String id) {
-        return new ParserContext.Key<>("dynamic:" + id, null);
+        return ParserContext.Key.of("dynamic:" + id, null);
     }
 
     @Override
-    public Component toText(ParserContext context, boolean removeBackslashes) {
+    public Component toComponent(ParserContext context, boolean removeBackslashes) {
         var x = context.get(key);
         if (x != null) {
             var t = x.apply(id);

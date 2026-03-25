@@ -4,11 +4,13 @@ import com.mojang.brigadier.StringReader;
 import eu.pb4.placeholders.api.node.LiteralNode;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.api.node.TranslatedNode;
-import eu.pb4.placeholders.api.node.parent.*;
-import eu.pb4.placeholders.impl.textparser.TextParserImpl;
-import net.minecraft.network.chat.ClickEvent;
+import eu.pb4.placeholders.api.node.parent.ClickActionNode;
+import eu.pb4.placeholders.api.node.parent.FormattingNode;
+import eu.pb4.placeholders.api.node.parent.HoverNode;
+import eu.pb4.placeholders.api.node.parent.ParentTextNode;
 import net.minecraft.ChatFormatting;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.ClickEvent;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -175,7 +177,7 @@ public final class MarkdownLiteParserV1 implements NodeParser {
                     if (!builder.isEmpty()) {
                         out.add(new LiteralNode(builder.toString()));
                     }
-                    return out.toArray(TextParserImpl.CASTER);
+                    return out.toArray(TextNode[]::new);
                 }
 
                 var xStart = nodes.nextIndex();
@@ -194,7 +196,7 @@ public final class MarkdownLiteParserV1 implements NodeParser {
                             if (!builder.isEmpty()) {
                                 out.add(new LiteralNode(builder.toString()));
                             }
-                            return out.toArray(TextParserImpl.CASTER);
+                            return out.toArray(TextNode[]::new);
                         }
                     } else {
                         break;
@@ -327,7 +329,7 @@ public final class MarkdownLiteParserV1 implements NodeParser {
             if (!builder.isEmpty()) {
                 out.add(new LiteralNode(builder.toString()));
             }
-            return out.toArray(TextParserImpl.CASTER);
+            return out.toArray(TextNode[]::new);
         } else {
             while (startIndex != nodes.nextIndex()) {
                 nodes.previous();
