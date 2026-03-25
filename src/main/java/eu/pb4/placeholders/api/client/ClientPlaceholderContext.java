@@ -6,11 +6,8 @@ import eu.pb4.placeholders.impl.client.ClientPlaceholderContextImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
 
-@OnlyIn(Dist.CLIENT)
 public interface ClientPlaceholderContext extends PlaceholderContext {
     ParserContext.Key<ClientPlaceholderContext> CLIENT_KEY = ParserContext.Key.of("client_placeholder_context", ClientPlaceholderContext.class);
     static ClientPlaceholderContext get() {

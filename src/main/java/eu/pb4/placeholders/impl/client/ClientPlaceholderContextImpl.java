@@ -10,11 +10,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jspecify.annotations.Nullable;
 
-@OnlyIn(Dist.CLIENT)
 public record ClientPlaceholderContextImpl(Minecraft minecraft, ViewObject view) implements ClientPlaceholderContext {
     @Override
     public ClientPlaceholderContext withView(ViewObject view) {
