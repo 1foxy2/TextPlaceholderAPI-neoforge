@@ -6,14 +6,13 @@ import eu.pb4.placeholders.impl.GeneralUtils;
 import eu.pb4.placeholders.impl.color.HSV;
 import eu.pb4.placeholders.impl.color.OkLab;
 import eu.pb4.placeholders.impl.color.OkLch;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public final class GradientNode extends ParentNode implements DynamicShadowNode.Transformer {
     private final GradientProvider gradientProvider;

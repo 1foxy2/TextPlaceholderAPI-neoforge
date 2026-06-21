@@ -4,9 +4,8 @@ import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.node.parent.ParentNode;
 import eu.pb4.placeholders.impl.GeneralUtils;
-import net.minecraft.network.chat.Component;
-
 import java.util.List;
+import net.minecraft.network.chat.Component;
 
 public interface TextNode {
     Component toComponent(ParserContext context, boolean removeBackslashes);
@@ -60,6 +59,10 @@ public interface TextNode {
     }
 
     static TextNode[] array(TextNode... nodes) {
+        if (nodes.length == 1 && nodes[0].getClass() == ParentNode.class) {
+            return ((ParentNode) nodes[0]).getChildren();
+        }
+
         return nodes;
     }
 

@@ -1,6 +1,7 @@
 package eu.pb4.placeholders.api.parsers;
 
 import eu.pb4.placeholders.api.ParserContext;
+import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.node.*;
 import eu.pb4.placeholders.api.node.parent.ParentNode;
@@ -11,7 +12,6 @@ import eu.pb4.placeholders.impl.placeholder.PlaceholderNode;
 import eu.pb4.placeholders.impl.textparser.MultiTagLikeParser;
 import eu.pb4.placeholders.impl.textparser.SingleTagLikeParser;
 import eu.pb4.placeholders.impl.textparser.providers.LenientFormat;
-import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import net.minecraft.network.chat.Component;
 
 public abstract class TagLikeParser implements NodeParser, TagLikeWrapper {
     public static final Format TAGS = Format.of('<', '>', ' ');
@@ -64,7 +65,8 @@ public abstract class TagLikeParser implements NodeParser, TagLikeWrapper {
         for (var entry : formatsAndProviders.entrySet()) {
             list.add(Pair.of(entry));
         }
-        return new MultiTagLikeParser(list.toArray(new Pair[0]));
+        //noinspection SuspiciousToArrayCall,unchecked
+        return new MultiTagLikeParser(list.toArray(Pair[]::new));
     }
 
     @Override
@@ -75,9 +77,9 @@ public abstract class TagLikeParser implements NodeParser, TagLikeWrapper {
     }
 
     private void parse(TextNode node, Context context) {
-        if (node instanceof LiteralNode literal) {
-            context.input = literal.value();
-            this.handleLiteral(literal.value(), context);
+        if (node instanceof LiteralNode(String value)) {
+            context.input = value;
+            this.handleLiteral(value, context);
         } else if (node instanceof TranslatedNode translatedNode) {
             context.addNode(translatedNode.transform(this));
         } else if (node instanceof ParentTextNode parent) {

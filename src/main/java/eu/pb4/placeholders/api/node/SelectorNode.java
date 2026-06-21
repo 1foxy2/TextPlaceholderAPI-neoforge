@@ -2,11 +2,12 @@ package eu.pb4.placeholders.api.node;
 
 import com.mojang.datafixers.util.Either;
 import eu.pb4.placeholders.api.ParserContext;
+import java.util.Optional;
+
 import eu.pb4.placeholders.impl.StringArgOps;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
-
-import java.util.Optional;
+import net.minecraft.util.CompilableString;
 
 public record SelectorNode(TextNode selector, Optional<TextNode> separator) implements TextNode {
     @Override

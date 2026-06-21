@@ -1,10 +1,7 @@
 package eu.pb4.placeholders.api.client;
 
 import com.google.common.collect.ImmutableMap;
-import eu.pb4.placeholders.api.ArgumentParser;
-import eu.pb4.placeholders.api.Placeholder;
-import eu.pb4.placeholders.api.PlaceholderResult;
-import eu.pb4.placeholders.api.Placeholders;
+import eu.pb4.placeholders.api.*;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import eu.pb4.placeholders.api.parsers.TagLikeParser;
 import net.minecraft.resources.Identifier;

@@ -1,11 +1,11 @@
 package eu.pb4.placeholders.api.arguments;
 
-import net.minecraft.CharPredicate;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.CharPredicate;
 
 public class SimpleArguments {
     public static boolean isWrapCharacter(char c) {

@@ -3,12 +3,11 @@ package eu.pb4.placeholders.api.node.parent;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.impl.GeneralUtils;
+import java.util.Arrays;
+import java.util.Collection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-
-import java.util.Arrays;
-import java.util.Collection;
 
 public class ParentNode implements ParentTextNode {
     public static final ParentNode EMPTY = new ParentNode(new TextNode[0]);
@@ -33,7 +32,7 @@ public class ParentNode implements ParentTextNode {
     }
 
     @Override
-    public final Component toComponent(ParserContext context, boolean removeBackslashes) {
+    public Component toComponent(ParserContext context, boolean removeBackslashes) {
         var compact = context.get(ParserContext.Key.COMPACT_COMPONENT) != Boolean.FALSE;
         var oldShadow = context.get(ParserContext.Key.DEFAULT_SHADOW_STYLER);
 

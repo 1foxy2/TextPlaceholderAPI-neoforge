@@ -2,10 +2,10 @@ package eu.pb4.placeholders.api.node;
 
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.parsers.NodeParser;
-import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import net.minecraft.network.chat.Component;
 
 public record TranslatedNode(String key, @Nullable String fallback, Object[] args) implements TextNode {
     public static TranslatedNode of(String key, Object... args) {

@@ -1,11 +1,11 @@
 package eu.pb4.placeholders.api.node;
 
 import eu.pb4.placeholders.api.ParserContext;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 
 public record DynamicTextNode(String id, ParserContext.Key<Function<String, Component>> key) implements TextNode {
     public static DynamicTextNode of(String id, ParserContext.Key<Function<String, Component>> key) {

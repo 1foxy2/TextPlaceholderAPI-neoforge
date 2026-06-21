@@ -12,10 +12,10 @@ import net.minecraft.network.chat.contents.data.BlockDataSource;
 import net.minecraft.network.chat.contents.data.EntityDataSource;
 import net.minecraft.network.chat.contents.data.StorageDataSource;
 import net.minecraft.network.chat.contents.objects.ObjectInfo;
+import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.util.CompilableString;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.neoforged.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 @ApiStatus.Internal
 public class GeneralUtils {
     public static final Logger LOGGER = LoggerFactory.getLogger("Text Placeholder API");
-    public static final boolean IS_DEV = !FMLEnvironment.isProduction();
+    public static final boolean IS_DEV = LoaderUtil.IS_DEV;
     public static final TextNode[] CASTER = new TextNode[0];
 
     public static String durationToString(long x) {

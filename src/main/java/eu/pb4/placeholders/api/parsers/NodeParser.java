@@ -4,9 +4,8 @@ import com.mojang.serialization.Codec;
 import eu.pb4.placeholders.api.ParserContext;
 import eu.pb4.placeholders.api.node.TextNode;
 import eu.pb4.placeholders.impl.textparser.MergedParser;
-import net.minecraft.network.chat.Component;
-
 import java.util.List;
+import net.minecraft.network.chat.Component;
 
 public interface NodeParser {
     NodeParser NOOP = i -> new TextNode[] { i };

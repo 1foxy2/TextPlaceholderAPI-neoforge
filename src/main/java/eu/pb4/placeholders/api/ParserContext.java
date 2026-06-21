@@ -1,13 +1,13 @@
 package eu.pb4.placeholders.api;
 
 import eu.pb4.placeholders.api.node.parent.DynamicShadowNode;
-import net.minecraft.core.HolderLookup;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import net.minecraft.core.HolderLookup;
 
 public final class ParserContext {
     private Map<Key<?>, Object> map;

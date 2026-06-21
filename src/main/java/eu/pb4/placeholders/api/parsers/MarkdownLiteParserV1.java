@@ -8,8 +8,6 @@ import eu.pb4.placeholders.api.node.parent.ClickActionNode;
 import eu.pb4.placeholders.api.node.parent.FormattingNode;
 import eu.pb4.placeholders.api.node.parent.HoverNode;
 import eu.pb4.placeholders.api.node.parent.ParentTextNode;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.ClickEvent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -19,6 +17,8 @@ import java.util.ListIterator;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 
 /**
  * Basic markdown parser supporting only single-line vanilla text compatible formatting.

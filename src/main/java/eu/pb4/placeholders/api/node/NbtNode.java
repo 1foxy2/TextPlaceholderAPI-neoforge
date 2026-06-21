@@ -2,7 +2,10 @@ package eu.pb4.placeholders.api.node;
 
 import com.mojang.datafixers.util.Either;
 import eu.pb4.placeholders.api.ParserContext;
+import java.util.Optional;
+
 import eu.pb4.placeholders.impl.StringArgOps;
+import net.minecraft.commands.arguments.NbtPathArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.NbtContents;
@@ -10,8 +13,6 @@ import net.minecraft.network.chat.contents.data.BlockDataSource;
 import net.minecraft.network.chat.contents.data.EntityDataSource;
 import net.minecraft.network.chat.contents.data.StorageDataSource;
 import net.minecraft.resources.Identifier;
-
-import java.util.Optional;
 
 public record NbtNode(String dataSource, String path, String sourcePath, boolean interpret, boolean plain, Optional<TextNode> separator) implements TextNode {
     @Override

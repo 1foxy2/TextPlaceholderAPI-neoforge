@@ -1,13 +1,14 @@
 package eu.pb4.placeholders.api.node;
 
 import eu.pb4.placeholders.api.ParserContext;
+
+import java.util.Optional;
+import java.util.UUID;
+
 import eu.pb4.placeholders.impl.GeneralUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.objects.PlayerSprite;
 import net.minecraft.world.item.component.ResolvableProfile;
-
-import java.util.Optional;
-import java.util.UUID;
 
 public record DynamicPlayerHeadNode(TextNode name, boolean hat, Type type, Optional<TextNode> fallback) implements TextNode {
     @Override

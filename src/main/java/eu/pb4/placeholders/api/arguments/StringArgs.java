@@ -5,14 +5,14 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import eu.pb4.placeholders.impl.StringArgOps;
-import net.minecraft.CharPredicate;
-import net.minecraft.core.HolderLookup;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import net.minecraft.CharPredicate;
+import net.minecraft.core.HolderLookup;
 
 public final class StringArgs {
     private static final StringArgs EMPTY = new StringArgs("");
